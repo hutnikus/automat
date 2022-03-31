@@ -1,0 +1,2 @@
+class Kasa:
+    pass

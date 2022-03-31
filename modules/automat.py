@@ -1,0 +1,2 @@
+class Automat:
+    pass
