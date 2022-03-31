@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from decimal import Decimal
-from tovar import *
+from modules.tovar import *
 
 
 @dataclass()
