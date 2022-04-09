@@ -1,4 +1,4 @@
-from testy.automat import *
+from automat import *
 from testy.kasa import *
 from testy.rad import *
 
