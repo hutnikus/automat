@@ -36,7 +36,7 @@ class AutomatTest(unittest.TestCase):
 
         self.assertEqual(automat.nastavRad(2, 3, "COKE", 1.5, 5), False)
 
-    def testNastavTovarZaStlpec(self):
+    def testNastavTovarZaStlpec2(self):
         automat = Automat(2, 3)
 
         self.assertEqual(automat.nastavRad(2, 3, "COKE", 1.5, 5), False)

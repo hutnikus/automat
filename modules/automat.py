@@ -11,13 +11,12 @@ class Automat:
         for i, riadok in enumerate(self.rady):
             for j, rad in enumerate(riadok):
                 if rad is not None:
-                    print(f"[{i},{j}] - {rad.tovar.meno} (${rad.cena:.2f})")
+                    print(f"[{i},{j}] - {rad.tovar} (${rad.cena:.2f})")
 
-    def nastavRad(self, riadok, stlpec, meno, cena, pocet=0):
+    def nastavRad(self, riadok: int, stlpec: int, meno: str, cena: float, pocet: int=0):
         if riadok < 0 or stlpec < 0 or riadok >= len(self.rady) or stlpec >= len(self.rady[riadok]):
             return False
-        # co je akoze typ ?
-        self.rady[riadok][stlpec] = Rad(pocet, cena, Tovar(meno, meno))
+        self.rady[riadok][stlpec] = Rad(pocet, Decimal(cena), meno)
         return True
 
     def getData(self):
