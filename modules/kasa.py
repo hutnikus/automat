@@ -24,3 +24,15 @@ class Kasa:
             "1c": 0
         }
         self.ucet = Decimal(0)
+
+    def getData(self):
+        return {
+            "buffer": self.buffer,
+            "mince": self.mince,
+            "ucet": str(self.ucet)
+        }
+
+    def loadFromData(self, data):
+        self.buffer = data["buffer"],
+        self.mince = data["mince"],
+        self.ucet = Decimal(data["ucet"])

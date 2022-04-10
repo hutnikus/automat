@@ -51,5 +51,7 @@ class AutomatTest(unittest.TestCase):
         automat.katalog()
 
 
+
+
 if __name__ == '__main__':
     unittest.main()

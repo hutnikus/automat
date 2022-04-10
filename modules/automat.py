@@ -1,7 +1,6 @@
 from modules.kasa import *
 from modules.rad import Rad
-from modules.tovar import Tovar
-
+import json
 
 class Automat:
     def __init__(self, vyska=5, sirka=5):
@@ -21,7 +20,35 @@ class Automat:
         self.rady[riadok][stlpec] = Rad(pocet, cena, Tovar(meno, meno))
         return True
 
+    def getData(self):
+        def dataOrNone(data):
+            if data is None:
+                return None
+            return data.getData()
+
+        return {
+            'rady': [[dataOrNone(data) for data in r] for r in self.rady],
+            'kasa': self.kasa.getData()
+        }
+
+    def loadFromData(self, data):
+        self.kasa.loadFromData(data["kasa"])
+        self.rady = [[Rad.createFromData(rad) for rad in riadok] for riadok in data["rady"]]
+
+    def save(self):
+        data = self.getData()
+        FILENAME = "file.json"
+        with open(FILENAME, "w") as file:
+            json.dump(data, file)
+
+
+    def load(self):
+        FILENAME = "file.json"
+        with open(FILENAME, "r") as file:
+            data = json.load(file)
+            self.loadFromData(data)
 
 if __name__ == '__main__':
     automat = Automat(2, 3)
     print(automat.nastavRad(1, 1, "COKE", 1.5, 5))
+    print(automat.getData())
