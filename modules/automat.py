@@ -1,28 +1,28 @@
-from modules.kasa import *
-from modules.rad import Rad
+from modules.cashregister import *
+from modules.row import Row
 import json
 
 
 class Automat:
-    def __init__(self, vyska=5, sirka=5):
-        self.rady = [[None for j in range(sirka)] for i in range(vyska)]
-        self.kasa = Kasa()
+    def __init__(self, height=5, width=5):
+        self.items = [[None for j in range(width)] for i in range(height)]
+        self.cashRegister = CashRegister()
 
     def __eq__(self, other):
-        return self.rady == other.rady and self.kasa == other.kasa
+        return self.items == other.items and self.cashRegister == other.cashRegister
 
-    def getKatalog(self):
+    def getCatalog(self):
         retString = ""
-        for i, riadok in enumerate(self.rady):
-            for j, rad in enumerate(riadok):
-                if isinstance(rad, Rad):
-                    retString += f"[{i},{j}] - {rad.tovar} (${rad.cena:.2f})\n"
+        for i, col in enumerate(self.items):
+            for j, row in enumerate(col):
+                if isinstance(row, Row):
+                    retString += f"[{i},{j}] - {row.goods} (${row.price:.2f})\n"
         return retString
 
-    def nastavRad(self, riadok: int, stlpec: int, meno: str, cena: float, pocet: int = 0):
-        if riadok < 0 or stlpec < 0 or riadok >= len(self.rady) or stlpec >= len(self.rady[riadok]):
+    def setRow(self, rowNumber: int, colNumber: int, goodsName: str, price: float, quantity: int = 0):
+        if rowNumber < 0 or colNumber < 0 or rowNumber >= len(self.items) or colNumber >= len(self.items[rowNumber]):
             return False
-        self.rady[riadok][stlpec] = Rad(pocet, Decimal(cena), meno)
+        self.items[rowNumber][colNumber] = Row(quantity, Decimal(price), goodsName)
         return True
 
     def getData(self):
@@ -32,13 +32,13 @@ class Automat:
             return data.getData()
 
         return {
-            'rady': [[dataOrNone(data) for data in r] for r in self.rady],
-            'kasa': self.kasa.getData()
+            'items': [[dataOrNone(data) for data in r] for r in self.items],
+            'cashRegister': self.cashRegister.getData()
         }
 
     def loadFromData(self, data):
-        self.kasa.loadFromData(data["kasa"])
-        self.rady = [[Rad.createFromData(rad) for rad in riadok] for riadok in data["rady"]]
+        self.cashRegister.loadFromData(data["cashRegister"])
+        self.items = [[Row.createFromData(row) for row in col] for col in data["items"]]
 
     def save(self, filename):
         data = self.getData()
@@ -53,5 +53,5 @@ class Automat:
 
 if __name__ == '__main__':
     automat = Automat(2, 3)
-    print(automat.nastavRad(1, 1, "COKE", 1.5, 5))
-    print(automat.getData())
+    print(automat.setRow(1, 1, "COKE", 1.5, 5))
+    print(automat.getCatalog())
