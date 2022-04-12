@@ -7,7 +7,7 @@ class RowTest(unittest.TestCase):
     def test_uprava_ceny(self):
         r = Row(0, Decimal(1), "keksik")
 
-        r.price += 10
+        r.setPrice(Decimal(11))
 
         self.assertEqual(r.price, Decimal(11))
 

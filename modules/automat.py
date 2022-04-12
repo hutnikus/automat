@@ -19,11 +19,35 @@ class Automat:
                     retString += f"[{i},{j}] - {row.goods} (${row.price:.2f})\n"
         return retString
 
+    def _checkRowColInBounds(self, row, col):
+        return 0 <= row < len(self.items) and 0 <= col < len(self.items[row])
+
     def setRow(self, rowNumber: int, colNumber: int, goodsName: str, price: float, quantity: int = 0):
-        if rowNumber < 0 or colNumber < 0 or rowNumber >= len(self.items) or colNumber >= len(self.items[rowNumber]):
+        if not self._checkRowColInBounds(rowNumber, colNumber):
             return False
         self.items[rowNumber][colNumber] = Row(quantity, Decimal(price), goodsName)
         return True
+
+    def addRow(self, rowNumber: int, colNumber: int, goodsName: str, price: float, quantity: int = 0):
+        if not self._checkRowColInBounds(rowNumber, colNumber):
+            return False
+        if self.items[rowNumber][colNumber] is not None:
+            return False
+        self.items[rowNumber][colNumber] = Row(quantity, Decimal(price), goodsName)
+        return True
+
+    def removeRow(self, rowNumber: int, colNumber: int):
+        if not self._checkRowColInBounds(rowNumber, colNumber):
+            return False
+        if self.items[rowNumber][colNumber] is None:
+            return False
+        self.items[rowNumber][colNumber] = None
+        return True
+
+    def getRow(self, rowNumber: int, colNumber: int):
+        if not self._checkRowColInBounds(rowNumber, colNumber):
+            raise IndexError()
+        return self.items[rowNumber][colNumber]
 
     def getData(self):
         def dataOrNone(data):
