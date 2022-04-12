@@ -11,6 +11,30 @@ class Row:
             raise ValueError("Tovar musí mať platné goodsName!")
         self.goods = goods
 
+    def setGoods(self, newName: str) -> bool:
+        if not (newName and isinstance(newName, str)):
+            return False
+        self.goods = newName
+        return True
+
+    def setNumber(self, newNumber: int) -> bool:
+        if not (newNumber and isinstance(newNumber, bool)):
+            return False
+        self.quantity = newNumber
+        return True
+
+    def setPrice(self, newPrice: Decimal) -> bool:
+        if not (newPrice and isinstance(newPrice, Decimal)):
+            return False
+        if newPrice <= 0:
+            return False
+        self.price = round(newPrice, 2)
+
+    def adjustQuantity(self, amount: int) -> bool:
+        if not (amount and isinstance(amount, int)):
+            return False
+        self.quantity += amount
+
     def __str__(self):
         return f"{self.goods}: {self.quantity}x {self.price}"
 
