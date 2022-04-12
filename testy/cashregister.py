@@ -1,10 +1,10 @@
 import unittest
-from modules.kasa import Kasa
+from modules.cashregister import CashRegister
 
 
-class KasaTest(unittest.TestCase):
+class CashRegisterTest(unittest.TestCase):
     def test_spravny_dict(self):
-        k = Kasa()
+        k = CashRegister()
         test_dict_changed = {
             "2e": 1,
             "1e": 0,
@@ -29,15 +29,15 @@ class KasaTest(unittest.TestCase):
         k.buffer["2e"] += 1
 
         self.assertDictEqual(k.buffer, test_dict_changed)
-        self.assertDictEqual(k.mince, test_dict_original)
+        self.assertDictEqual(k.coins, test_dict_original)
 
 
-class KasaRadTest(unittest.TestCase):
+class CashRegisterDataTest(unittest.TestCase):
     def testGetdata(self):
-        kasa = Kasa()
+        kasa = CashRegister()
         kasa.buffer["2e"] += 1
-        kasa.ucet = 11
-        kasa.mince["2e"] += 1
+        kasa.account = 11
+        kasa.coins["2e"] += 1
         data = kasa.getData()
         checkData = {
             "buffer": {'10c': 0,
@@ -48,7 +48,7 @@ class KasaRadTest(unittest.TestCase):
                        '2e': 1,
                        '50c': 0,
                        '5c': 0},
-            "mince": {'10c': 0,
+            "coins": {'10c': 0,
                       '1c': 0,
                       '1e': 0,
                       '20c': 0,
@@ -56,20 +56,20 @@ class KasaRadTest(unittest.TestCase):
                       '2e': 1,
                       '50c': 0,
                       '5c': 0},
-            "ucet": "11"
+            "account": "11"
         }
 
         self.assertDictEqual(data, checkData)
 
     def testLoadFromData(self):
-        originalKasa = Kasa()
-        originalKasa.ucet += 10
-        originalKasa.mince["1e"] += 5
-        originalKasa.mince["50c"] += 7
-        originalKasa.mince["5c"] += 10
+        originalKasa = CashRegister()
+        originalKasa.account += 10
+        originalKasa.coins["1e"] += 5
+        originalKasa.coins["50c"] += 7
+        originalKasa.coins["5c"] += 10
 
         data = originalKasa.getData()
-        newKasa = Kasa()
+        newKasa = CashRegister()
         newKasa.loadFromData(data)
 
         self.assertEqual(originalKasa, newKasa)

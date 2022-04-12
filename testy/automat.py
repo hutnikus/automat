@@ -5,73 +5,68 @@ from modules.automat import Automat
 class AutomatTest(unittest.TestCase):
     def test_spravne2dpole(self):
         a = Automat(2, 3)
-        a.rady[0][0] = 0
+        a.items[0][0] = 0
 
         test_list = [[0, None, None], [None, None, None]]
 
-        self.assertListEqual(a.rady, test_list)
+        self.assertListEqual(a.items, test_list)
 
-    def testNastavTovarSpravny(self):
+    def testSetCorrectGoods(self):
         automat = Automat(2, 3)
 
-        self.assertEqual(automat.nastavRad(1, 1, "COKE", 1.5, 5), True)
+        self.assertEqual(automat.setRow(1, 1, "COKE", 1.5, 5), True)
 
-    def testNastavTovarZaRiadok(self):
+    def testSetCorrectGoodsOutOfBoundsMore1(self):
         automat = Automat(2, 3)
 
-        self.assertEqual(automat.nastavRad(2, 1, "COKE", 1.5, 5), False)
+        self.assertEqual(automat.setRow(2, 1, "COKE", 1.5, 5), False)
 
-    def testNastavTovarPredRiadok(self):
+    def testSetCorrectGoodsOutOfBoundsLess1(self):
         automat = Automat(2, 3)
 
-        self.assertEqual(automat.nastavRad(-1, 1, "COKE", 1.5, 5), False)
+        self.assertEqual(automat.setRow(-1, 1, "COKE", 1.5, 5), False)
 
-    def testNastavTovarPredStlpec(self):
+    def testSetCorrectGoodsOutOfBoundsMore2(self):
         automat = Automat(2, 3)
 
-        self.assertEqual(automat.nastavRad(2, -1, "COKE", 1.5, 5), False)
+        self.assertEqual(automat.setRow(2, -1, "COKE", 1.5, 5), False)
 
-    def testNastavTovarZaStlpec(self):
+    def testSetCorrectGoodsOutOfBoundsLess2(self):
         automat = Automat(2, 3)
 
-        self.assertEqual(automat.nastavRad(2, 3, "COKE", 1.5, 5), False)
+        self.assertEqual(automat.setRow(2, 3, "COKE", 1.5, 5), False)
 
-    def testNastavTovarZaStlpec2(self):
+    def testCatalog(self):
         automat = Automat(2, 3)
+        automat.setRow(1, 1, "COKE", 1.5, 5)
+        automat.setRow(0, 1, "HORALKA", 5.5, 5)
+        automat.setRow(0, 0, "KAVENKA", 0.01, 5)
+        automat.setRow(1, 0, "FREYER", 999.99, 5)
 
-        self.assertEqual(automat.nastavRad(2, 3, "COKE", 1.5, 5), False)
-
-    def testKatalog(self):
-        automat = Automat(2, 3)
-        automat.nastavRad(1, 1, "COKE", 1.5, 5)
-        automat.nastavRad(0, 1, "HORALKA", 5.5, 5)
-        automat.nastavRad(0, 0, "KAVENKA", 0.01, 5)
-        automat.nastavRad(1, 0, "FREYER", 999.99, 5)
-
-        katalog = automat.getKatalog()
-        controlKatalog = "[0,0] - KAVENKA ($0.01)\n" \
+        catalog = automat.getCatalog()
+        controlCatalog = "[0,0] - KAVENKA ($0.01)\n" \
                          "[0,1] - HORALKA ($5.50)\n" \
                          "[1,0] - FREYER ($999.99)\n" \
                          "[1,1] - COKE ($1.50)\n"
 
-        self.assertEqual(katalog, controlKatalog)
+        self.assertEqual(catalog, controlCatalog)
 
 
 class AutomatDataTest(unittest.TestCase):
     def testGetData(self):
         automat = Automat(1, 2)
-        automat.nastavRad(0, 1, "COKE", 1.5, 5)
-        automat.kasa.buffer["2e"] += 10
-        automat.kasa.ucet += 10
+        automat.setRow(0, 1, "COKE", 1.5, 5)
+        automat.cashRegister.buffer["2e"] += 10
+        automat.cashRegister.account += 10
 
         data = {
-            'rady': [
-                [None, {'pocet': 5, 'cena': '1.50', 'tovar': 'COKE'}]
+            'items': [
+                [None, {'quantity': 5, 'price': '1.50', 'goods': 'COKE'}]
             ],
-            'kasa': {
+            'cashRegister': {
                 'buffer': {'2e': 10, '1e': 0, '50c': 0, '20c': 0, '10c': 0, '5c': 0, '2c': 0, '1c': 0},
-                'mince': {'2e': 0, '1e': 0, '50c': 0, '20c': 0, '10c': 0, '5c': 0, '2c': 0, '1c': 0},
-                'ucet': '10.00'
+                'coins': {'2e': 0, '1e': 0, '50c': 0, '20c': 0, '10c': 0, '5c': 0, '2c': 0, '1c': 0},
+                'account': '10.00'
             }
         }
 
@@ -79,9 +74,9 @@ class AutomatDataTest(unittest.TestCase):
 
     def testLoadFromData(self):
         automat = Automat(1, 2)
-        automat.nastavRad(0, 1, "COKE", 1.5, 5)
-        automat.kasa.buffer["2e"] += 10
-        automat.kasa.ucet += 10
+        automat.setRow(0, 1, "COKE", 1.5, 5)
+        automat.cashRegister.buffer["2e"] += 10
+        automat.cashRegister.account += 10
 
         data = automat.getData()
         controlAutomat = Automat(1, 2)
@@ -91,13 +86,13 @@ class AutomatDataTest(unittest.TestCase):
 
     def testSave(self):
         automat = Automat(1, 2)
-        automat.nastavRad(0, 1, "COKE", 1.5, 5)
-        automat.kasa.buffer["2e"] += 10
-        automat.kasa.ucet += 10
+        automat.setRow(0, 1, "COKE", 1.5, 5)
+        automat.cashRegister.buffer["2e"] += 10
+        automat.cashRegister.account += 10
 
-        controlString = '{"rady": [[null, {"pocet": 5, "cena": "1.50", "tovar": "COKE"}]], "kasa": {"buffer": {"2e": ' \
-                        '10, "1e": 0, "50c": 0, "20c": 0, "10c": 0, "5c": 0, "2c": 0, "1c": 0}, "mince": {"2e": 0, ' \
-                        '"1e": 0, "50c": 0, "20c": 0, "10c": 0, "5c": 0, "2c": 0, "1c": 0}, "ucet": "10.00"}}'
+        controlString = '{"items": [[null, {"quantity": 5, "price": "1.50", "goods": "COKE"}]], "cashRegister": {"buffer": {"2e": ' \
+                        '10, "1e": 0, "50c": 0, "20c": 0, "10c": 0, "5c": 0, "2c": 0, "1c": 0}, "coins": {"2e": 0, ' \
+                        '"1e": 0, "50c": 0, "20c": 0, "10c": 0, "5c": 0, "2c": 0, "1c": 0}, "account": "10.00"}}'
 
         filename = "../files/data.json"
         automat.save(filename)
@@ -108,9 +103,9 @@ class AutomatDataTest(unittest.TestCase):
 
     def testLoad(self):
         automat = Automat(1, 2)
-        automat.nastavRad(0, 1, "COKE", 1.5, 5)
-        automat.kasa.buffer["2e"] += 10
-        automat.kasa.ucet += 10
+        automat.setRow(0, 1, "COKE", 1.5, 5)
+        automat.cashRegister.buffer["2e"] += 10
+        automat.cashRegister.account += 10
 
         filename = "../files/data.json"
         automat.save(filename)
@@ -122,9 +117,9 @@ class AutomatDataTest(unittest.TestCase):
 
     def testLoadWithDifferentSize(self):
         automat = Automat(1, 2)
-        automat.nastavRad(0, 1, "COKE", 1.5, 5)
-        automat.kasa.buffer["2e"] += 10
-        automat.kasa.ucet += 10
+        automat.setRow(0, 1, "COKE", 1.5, 5)
+        automat.cashRegister.buffer["2e"] += 10
+        automat.cashRegister.account += 10
 
         filename = "../files/data.json"
         automat.save(filename)

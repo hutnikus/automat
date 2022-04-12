@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 
-class Kasa:
+class CashRegister:
     def __init__(self):
         self.buffer = {
             "2e": 0,
@@ -13,7 +13,7 @@ class Kasa:
             "2c": 0,
             "1c": 0
         }
-        self.mince = {
+        self.coins = {
             "2e": 0,
             "1e": 0,
             "50c": 0,
@@ -23,19 +23,19 @@ class Kasa:
             "2c": 0,
             "1c": 0
         }
-        self.ucet = round(Decimal(0), 2)
+        self.account = round(Decimal(0), 2)
 
     def __eq__(self, other):
-        return self.buffer == other.buffer and self.mince == other.mince and self.ucet == other.ucet
+        return self.buffer == other.buffer and self.coins == other.coins and self.account == other.account
 
     def getData(self):
         return {
             "buffer": self.buffer,
-            "mince": self.mince,
-            "ucet": str(self.ucet)
+            "coins": self.coins,
+            "account": str(self.account)
         }
 
     def loadFromData(self, data):
         self.buffer = data["buffer"]
-        self.mince = data["mince"]
-        self.ucet = Decimal(data["ucet"])
+        self.coins = data["coins"]
+        self.account = Decimal(data["account"])
