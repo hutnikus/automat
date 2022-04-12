@@ -2,18 +2,24 @@ from modules.kasa import *
 from modules.rad import Rad
 import json
 
+
 class Automat:
     def __init__(self, vyska=5, sirka=5):
         self.rady = [[None for j in range(sirka)] for i in range(vyska)]
         self.kasa = Kasa()
 
-    def katalog(self):
+    def __eq__(self, other):
+        return self.rady == other.rady and self.kasa == other.kasa
+
+    def getKatalog(self):
+        retString = ""
         for i, riadok in enumerate(self.rady):
             for j, rad in enumerate(riadok):
-                if rad is not None:
-                    print(f"[{i},{j}] - {rad.tovar} (${rad.cena:.2f})")
+                if isinstance(rad, Rad):
+                    retString += f"[{i},{j}] - {rad.tovar} (${rad.cena:.2f})\n"
+        return retString
 
-    def nastavRad(self, riadok: int, stlpec: int, meno: str, cena: float, pocet: int=0):
+    def nastavRad(self, riadok: int, stlpec: int, meno: str, cena: float, pocet: int = 0):
         if riadok < 0 or stlpec < 0 or riadok >= len(self.rady) or stlpec >= len(self.rady[riadok]):
             return False
         self.rady[riadok][stlpec] = Rad(pocet, Decimal(cena), meno)
@@ -34,18 +40,16 @@ class Automat:
         self.kasa.loadFromData(data["kasa"])
         self.rady = [[Rad.createFromData(rad) for rad in riadok] for riadok in data["rady"]]
 
-    def save(self):
+    def save(self, filename):
         data = self.getData()
-        FILENAME = "file.json"
-        with open(FILENAME, "w") as file:
+        with open(filename, "w") as file:
             json.dump(data, file)
 
-
-    def load(self):
-        FILENAME = "file.json"
-        with open(FILENAME, "r") as file:
+    def load(self, filename):
+        with open(filename, "r") as file:
             data = json.load(file)
             self.loadFromData(data)
+
 
 if __name__ == '__main__':
     automat = Automat(2, 3)

@@ -23,7 +23,10 @@ class Kasa:
             "2c": 0,
             "1c": 0
         }
-        self.ucet = Decimal(0)
+        self.ucet = round(Decimal(0), 2)
+
+    def __eq__(self, other):
+        return self.buffer == other.buffer and self.mince == other.mince and self.ucet == other.ucet
 
     def getData(self):
         return {
@@ -33,6 +36,6 @@ class Kasa:
         }
 
     def loadFromData(self, data):
-        self.buffer = data["buffer"],
-        self.mince = data["mince"],
+        self.buffer = data["buffer"]
+        self.mince = data["mince"]
         self.ucet = Decimal(data["ucet"])

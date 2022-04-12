@@ -1,5 +1,4 @@
-from dataclasses import dataclass
-from decimal import Decimal, getcontext, ROUND_DOWN
+from decimal import Decimal
 
 
 class Rad:
@@ -8,7 +7,7 @@ class Rad:
         if cena <= 0:
             raise ValueError("Cena musí byť vyššia ako 0!")
         self.cena = round(cena, 2)
-        if tovar =='' or tovar is None:
+        if tovar == '' or tovar is None:
             raise ValueError("Tovar musí mať platné meno!")
         self.tovar = tovar
 
@@ -17,9 +16,9 @@ class Rad:
 
     def __eq__(self, other):
         return (
-            self.pocet == other.pocet and
-            self.cena == other.cena and
-            self.tovar == other.tovar
+                self.pocet == other.pocet and
+                self.cena == other.cena and
+                self.tovar == other.tovar
         )
 
     def getData(self):
@@ -36,6 +35,8 @@ class Rad:
 
     @staticmethod
     def createFromData(data):
+        if data is None:
+            return None
         return Rad(
             data["pocet"],
             Decimal(data["cena"]),
@@ -44,6 +45,6 @@ class Rad:
 
 
 if __name__ == '__main__':
-    rad = Rad(1,Decimal(5.459),"keksik")
+    rad = Rad(1, Decimal(5.459), "keksik")
     print(rad)
-    print(round(Decimal(5.65416),3).__repr__())
+    print(round(Decimal(5.65416), 3).__repr__())

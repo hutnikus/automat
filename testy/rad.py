@@ -17,8 +17,10 @@ class RadTest(unittest.TestCase):
     def test_prazdne_meno(self):
         self.assertRaises(ValueError, Rad, 0, 1, "")
 
+
+class RadDataTest(unittest.TestCase):
     def testGetdata(self):
-        rad = Rad(1,Decimal(5.2148),"keksik")
+        rad = Rad(1, Decimal(5.2148), "keksik")
 
         data = rad.getData()
         checkData = {
@@ -27,10 +29,10 @@ class RadTest(unittest.TestCase):
             "tovar": "keksik"
         }
 
-        self.assertDictEqual(data,checkData)
+        self.assertDictEqual(data, checkData)
 
     def testGetdata2(self):
-        rad = Rad(1,Decimal(5),"keksik")
+        rad = Rad(1, Decimal(5), "keksik")
 
         data = rad.getData()
         checkData = {
@@ -39,10 +41,23 @@ class RadTest(unittest.TestCase):
             "tovar": "keksik"
         }
 
-        self.assertDictEqual(data,checkData)
+        self.assertDictEqual(data, checkData)
+
+    def testLoadFromData(self):
+        rad = Rad(1, Decimal(5), "keksik")
+        data = {
+            "pocet": 1,
+            "cena": "5.00",
+            "tovar": "keksik"
+        }
+
+        checkRad = Rad(0, Decimal(0.1), "aaaaaaaa")
+        checkRad.loadFromData(data)
+
+        self.assertEqual(rad, checkRad)
 
     def testCreateFromData(self):
-        rad = Rad(1,Decimal(5),"keksik")
+        rad = Rad(1, Decimal(5), "keksik")
         data = {
             "pocet": 1,
             "cena": "5.00",
@@ -54,7 +69,5 @@ class RadTest(unittest.TestCase):
         self.assertEqual(rad, checkRad)
 
 
-
 if __name__ == '__main__':
     unittest.main()
-
