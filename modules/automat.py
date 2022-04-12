@@ -1,6 +1,11 @@
 from modules.cashregister import *
 from modules.row import Row
 import json
+from typing import Union
+
+
+class EmptyError(Exception):
+    pass
 
 
 class Automat:
@@ -44,9 +49,9 @@ class Automat:
         self.items[rowNumber][colNumber] = None
         return True
 
-    def getRow(self, rowNumber: int, colNumber: int):
+    def getRow(self, rowNumber: int, colNumber: int) -> Union[Row, None]:
         if not self._checkRowColInBounds(rowNumber, colNumber):
-            raise IndexError()
+            raise IndexError("Riadok alebo stĺpec mimo limit!")
         return self.items[rowNumber][colNumber]
 
     def getData(self):
@@ -73,6 +78,19 @@ class Automat:
         with open(filename, "r") as file:
             data = json.load(file)
             self.loadFromData(data)
+
+    def buyItemWithCard(self, row: int, col: int) -> bool:
+        row = self.getRow(row, col)
+        if not row:
+            raise EmptyError("Zvolené miesto je prázdne")
+
+        if row.quantity == 0:
+            raise EmptyError("Zvolené miesto je prázdne")
+
+        row.adjustQuantity(-1)
+        self.cashRegister.addToAccount(row.price)
+
+        return True
 
 
 if __name__ == '__main__':

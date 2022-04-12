@@ -34,6 +34,10 @@ class Row:
         if not (amount and isinstance(amount, int)):
             return False
         self.quantity += amount
+        if self.quantity < 0:
+            self.quantity -= amount
+            return False
+        return True
 
     def __str__(self):
         return f"{self.goods}: {self.quantity}x {self.price}"

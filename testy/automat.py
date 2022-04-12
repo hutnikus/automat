@@ -1,5 +1,5 @@
 import unittest
-from modules.automat import Automat
+from modules.automat import Automat, EmptyError
 from modules.row import Row
 from decimal import Decimal
 
@@ -186,6 +186,27 @@ class TestGoodsManagement(unittest.TestCase):
         automat = Automat(1, 1)
         self.assertRaises(IndexError, automat.getRow, 1, 1)
 
+
+class TestPayment(unittest.TestCase):
+    def testPayByCardCorrect(self):
+        automat = Automat(1, 1)
+        self.assertTrue(automat.addRow(0, 0, "KOFOLA", 1.05, 5))
+
+        self.assertTrue(automat.buyItemWithCard(0, 0))
+
+        self.assertEqual(automat.cashRegister.account, round(Decimal(1.05), 2))
+        self.assertEqual(automat.getRow(0, 0).quantity, 4)
+
+    def testPayByCardEmpty(self):
+        automat = Automat(1, 1)
+
+        self.assertRaises(EmptyError, automat.buyItemWithCard, 0, 0)
+
+    def testPayByCardEmpty2(self):
+        automat = Automat(1, 1)
+        self.assertTrue(automat.addRow(0, 0, "KOFOLA", 1.05, 0))
+
+        self.assertRaises(EmptyError, automat.buyItemWithCard, 0, 0)
 
 
 if __name__ == '__main__':
