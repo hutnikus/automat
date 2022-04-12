@@ -1,5 +1,7 @@
 import unittest
 from modules.automat import Automat
+from modules.row import Row
+from decimal import Decimal
 
 
 class AutomatTest(unittest.TestCase):
@@ -128,6 +130,62 @@ class AutomatDataTest(unittest.TestCase):
         controlAutomat.load(filename)
 
         self.assertEqual(automat, controlAutomat)
+
+
+class TestGoodsManagement(unittest.TestCase):
+    def testRowInsert(self):
+        automat = Automat(1, 1)
+        testRad = Row(5, Decimal(1.05), "KOFOLA")
+
+        self.assertTrue(automat.addRow(0, 0, "KOFOLA", 1.05, 5))
+
+        self.assertEqual(testRad, automat.getRow(0, 0))
+
+    def testRowInsertWrongParam(self):
+        automat = Automat(1, 1)
+
+        self.assertFalse(automat.addRow(1, 0, "KOFOLA", 1.05, 5))
+
+        self.assertEqual(None, automat.getRow(0, 0))
+
+    def testRowInsertUsedSpace(self):
+        automat = Automat(1, 1)
+        testRad = Row(5, Decimal(1.05), "KOFOLA")
+
+        self.assertTrue(automat.addRow(0, 0, "KOFOLA", 1.05, 5))
+        self.assertFalse(automat.addRow(0, 0, "FREYER", 1.05, 5))
+
+        self.assertEqual(testRad, automat.getRow(0, 0))
+
+    def testRowRemove(self):
+        automat = Automat(1, 1)
+        self.assertTrue(automat.addRow(0, 0, "KOFOLA", 1.05, 5))
+        self.assertTrue(automat.removeRow(0, 0))
+        self.assertEqual(None, automat.getRow(0, 0))
+
+    def testRowRemoveUnused(self):
+        automat = Automat(1, 1)
+        self.assertFalse(automat.removeRow(0, 0))
+
+    def testRowRemoveWrongParam(self):
+        automat = Automat(1, 1)
+        self.assertTrue(automat.addRow(0, 0, "KOFOLA", 1.05, 5))
+        self.assertFalse(automat.removeRow(1, 0))
+
+    def testGetRowUsed(self):
+        automat = Automat(1, 1)
+        testRad = Row(5, Decimal(1.05), "KOFOLA")
+        self.assertTrue(automat.addRow(0, 0, "KOFOLA", 1.05, 5))
+        self.assertEqual(automat.getRow(0, 0), testRad)
+
+    def testGetRowUnused(self):
+        automat = Automat(1, 1)
+        self.assertEqual(automat.getRow(0, 0), None)
+
+    def testGetRowOutOfBounds(self):
+        automat = Automat(1, 1)
+        self.assertRaises(IndexError, automat.getRow, 1, 1)
+
 
 
 if __name__ == '__main__':
