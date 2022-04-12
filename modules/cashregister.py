@@ -39,3 +39,8 @@ class CashRegister:
         self.buffer = data["buffer"]
         self.coins = data["coins"]
         self.account = Decimal(data["account"])
+
+    def addToAccount(self, amount: Decimal) -> bool:
+        if amount <= 0:
+            return False
+        self.account = round(self.account+amount, 2)

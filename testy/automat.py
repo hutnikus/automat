@@ -1,5 +1,5 @@
 import unittest
-from modules.automat import Automat
+from modules.automat import Automat, EmptyError
 from modules.row import Row
 from decimal import Decimal
 
@@ -185,6 +185,21 @@ class TestGoodsManagement(unittest.TestCase):
     def testGetRowOutOfBounds(self):
         automat = Automat(1, 1)
         self.assertRaises(IndexError, automat.getRow, 1, 1)
+
+
+class TestPayment(unittest.TestCase):
+    def testPayByCardCorrect(self):
+        automat = Automat(1, 1)
+        self.assertTrue(automat.addRow(0, 0, "KOFOLA", 1.05, 5))
+
+        self.assertTrue(automat.buyItemWithCard(0, 0))
+
+        self.assertEqual(automat.cashRegister.account, round(Decimal(1.05), 2))
+
+    def testPayByCardEmpty(self):
+        automat = Automat(1, 1)
+
+        self.assertRaises(EmptyError, automat.buyItemWithCard, 0, 0)
 
 
 
