@@ -1,16 +1,12 @@
 import unittest
 
 from modules.automat import Automat
-from modules.console import Console, Mode, QueryType
+from modules.console import Console, Mode, QueryType, ResetError
+from modules.row import Row
+from decimal import Decimal
 
 
 class ConsoleTest(unittest.TestCase):
-    def testDefaultMode(self):
-        automat = Automat(2, 2)
-        console = Console(automat, False)
-
-        self.assertEqual(console.getCurrentMode(), "zákazník")
-
     def testStartModeSelection(self):
         automat = Automat(2, 2)
         console = Console(automat, False)
@@ -35,6 +31,58 @@ class ConsoleTest(unittest.TestCase):
         console = Console(automat, False)
 
         self.assertEqual(console.getEmptyPositions(), [(0, 0)])
+
+    def testGetGoods(self):
+        automat = Automat(2, 1)
+        console = Console(automat, False)
+
+        self.assertEqual(console.getGoods(), "Rozmer automatu | vyska: 2, sirka: 1\n")
+
+        automat.addRow(1, 0, "KEKSIK", 1, 0)
+        self.assertEqual(console.getGoods(), "Rozmer automatu | vyska: 2, sirka: 1\n[1,0] - KEKSIK (1.00€)\n")
+
+    def testAddCorrectRow(self):
+        automat = Automat(2, 2)
+        console = Console(automat, False)
+        console.setMode("1")
+
+        controlRow = Row(0, Decimal(1.25), "KEKSIK")
+
+        console.executeCommand("10")
+        console.executeCommand("0")
+        console.executeCommand("KEKSIK")
+        console.executeCommand("1.25")
+
+        self.assertEqual(automat.getRow(0, 0), controlRow)
+
+    def testExecuteEmptyCommand(self):
+        automat = Automat(2, 2)
+        console = Console(automat, False)
+        console.setMode("1")
+
+        console.executeCommand("10")
+        console.executeCommand("0")
+
+        self.assertRaises(ResetError, console.executeCommand, "")
+
+    def testAddRowIncorrectPrice(self):
+        automat = Automat(2, 2)
+        console = Console(automat, False)
+        console.setMode("1")
+
+        controlRow = Row(0, Decimal(1.25), "KEKSIK")
+
+        console.executeCommand("10")
+        console.executeCommand("0")
+        console.executeCommand("KEKSIK")
+        console.executeCommand("-1.25")
+        self.assertEqual(console.currentQuery, QueryType.ADD_ROW_SET_PRICE)
+        console.executeCommand("0")
+        self.assertEqual(console.currentQuery, QueryType.ADD_ROW_SET_PRICE)
+        console.executeCommand("fawfawf")
+        self.assertEqual(console.currentQuery, QueryType.ADD_ROW_SET_PRICE)
+
+        self.assertRaises(ResetError, console.executeCommand, "")
 
 
 

@@ -10,7 +10,9 @@ class Mode(Enum):
 class QueryType(Enum):
     COMMAND = 0
     SET_USER_MODE = 1
-    CHOOSE_EMPTY_POSITION = 2
+    ADD_ROW_CHOOSE_EMPTY = 2
+    ADD_ROW_SET_NAME = 3
+    ADD_ROW_SET_PRICE = 4
 
 
 class ResetError(Exception):
@@ -20,9 +22,10 @@ class ResetError(Exception):
 class Console:
     def __init__(self, automat: Automat, looping=True):
         self.automat = automat
-        self.mode = Mode.USER
+        self.mode = Mode.ADMIN
         self.looping = looping
         self.currentQuery = QueryType.COMMAND
+        self.stack = []
         self.startListenLoop()
 
     def startListenLoop(self):
@@ -30,7 +33,8 @@ class Console:
             print(self.getCommandsList())
             command = input(self.getQueryText())
             try:
-                self.executeCommand(command)
+                if not self.executeCommand(command):
+                    self.currentQuery = QueryType.COMMAND
             except ResetError:
                 pass
 
@@ -53,7 +57,7 @@ class Console:
         elif self.currentQuery == QueryType.SET_USER_MODE:
             commands += "0 - mód zákazník\n"
             commands += "1 - mód admin\n"
-        elif self.currentQuery == QueryType.CHOOSE_EMPTY_POSITION:
+        elif self.currentQuery == QueryType.ADD_ROW_CHOOSE_EMPTY:
             commands += "VOĽNÉ POZÍCIE:\n"
             for i, pos in enumerate(self.getEmptyPositions()):
                 commands += f"{i} - {pos}\n"
@@ -64,8 +68,12 @@ class Console:
             return "Zadaj príkaz: "
         if self.currentQuery == QueryType.SET_USER_MODE:
             return "Mód: "
-        if self.currentQuery == QueryType.CHOOSE_EMPTY_POSITION:
+        if self.currentQuery == QueryType.ADD_ROW_CHOOSE_EMPTY:
             return "Pozícia: "
+        if self.currentQuery == QueryType.ADD_ROW_SET_NAME:
+            return "Zadaj meno tovaru: "
+        if self.currentQuery == QueryType.ADD_ROW_SET_PRICE:
+            return "Zadaj cenu tovaru: "
 
         return ""
 
@@ -73,30 +81,44 @@ class Console:
         words = command.split()
         if not words or words[0] == "":
             self.cancelAction()
-        if self.currentQuery == QueryType.COMMAND:
-            if words[0] == "0":
-                self.currentQuery = QueryType.SET_USER_MODE
-                return True
-            if words[0] == "1":
-                print(self.getGoods())
-                return True
 
-            if self.mode == Mode.ADMIN:
-                if words[0] == "10":
-                    self.startAddingRows()
+        if self.currentQuery == QueryType.COMMAND:
+            return self.handleTypeCommand(words)
         if self.currentQuery == QueryType.SET_USER_MODE:
             return self.setMode(words)
-        if self.currentQuery == QueryType.CHOOSE_EMPTY_POSITION:
+        if self.currentQuery == QueryType.ADD_ROW_CHOOSE_EMPTY:
             return self.choosePositionToAddRow(words)
+        if self.currentQuery == QueryType.ADD_ROW_SET_NAME:
+            return self.addRowSetName(words)
+        if self.currentQuery == QueryType.ADD_ROW_SET_PRICE:
+            return self.addRowSetPrice(words)
 
         return False
 
+    def handleTypeCommand(self, words):
+        if words[0] == "0":
+            self.currentQuery = QueryType.SET_USER_MODE
+            return True
+        if words[0] == "1":
+            print(self.getGoods())
+            return True
+
+        if self.mode == Mode.ADMIN:
+            if words[0] == "10":
+                return self.startAddingRows()
+
     def setMode(self, words):
+        try:
+            int(words[0])
+        except ValueError:
+            self.cancelAction()
+
         if int(words[0]) in (0, 1):
             self.mode = Mode(int(words[0]))
             self.currentQuery = QueryType.COMMAND
             return True
-        return False
+
+        self.cancelAction()
 
     def getGoods(self):
         retStr = f"Rozmer automatu | vyska: {len(self.automat.items)}, sirka: {len(self.automat.items[0])}\n"
@@ -112,41 +134,62 @@ class Console:
         return retList
 
     def startAddingRows(self):
-        self.currentQuery = QueryType.CHOOSE_EMPTY_POSITION
+        self.currentQuery = QueryType.ADD_ROW_CHOOSE_EMPTY
+        return True
 
     def choosePositionToAddRow(self, words):
         emptyPositions = self.getEmptyPositions()
+        try:
+            int(words[0])
+        except ValueError:
+            self.cancelAction()
+
         if int(words[0]) in range(len(emptyPositions)):
-            if self.createAndAddRowInstance(emptyPositions[int(words[0])]):
-                self.currentQuery = QueryType.COMMAND
+            self.stack.append(emptyPositions[int(words[0])])
+            self.currentQuery = QueryType.ADD_ROW_SET_NAME
+            return True
         return False
 
     def cancelAction(self):
         print()
         print("Akcia prerušená!")
         self.currentQuery = QueryType.COMMAND
+        self.stack = []
         raise ResetError()
 
-    def createAndAddRowInstance(self, position): #todo refactor this
+    def addRowSetName(self, words):
+        if not words:
+            return False
+        self.stack.append(" ".join(words))
+        self.currentQuery = QueryType.ADD_ROW_SET_PRICE
+        return True
+
+    def addRowSetPrice(self, words):
         def isCorrectNumber(num):
             try:
                 return float(num) > 0
             except ValueError:
                 return False
 
-        name = input("Zadaj meno tovaru: ")
-        if not name:
-            self.cancelAction()
+        if len(words) != 1:
+            return False
 
-        while True:
-            price = input("Zadaj cenu tovaru: ")
-            if isCorrectNumber(price):
-                break
-            print("Cena tovaru musí byť kladné číslo!")
+        if isCorrectNumber(words[0]):
+            self.stack.append(float(words[0]))
+            return self.finishAddingRow()
 
-        price = float(price)
+        print("Cena tovaru musí byť kladné číslo!")
+        return True
 
-        return self.automat.addRow(position[0], position[1], name, price, 0)
+    def finishAddingRow(self):
+        price = self.stack.pop()
+        name = self.stack.pop()
+        row, col = self.stack.pop()
+
+        if not self.automat.addRow(row, col, name, price, 0):
+            print("Niekde nastala chyba!")
+
+        return False
 
 
 
