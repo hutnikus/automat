@@ -132,6 +132,9 @@ class AutomatDataTest(unittest.TestCase):
         self.assertEqual(automat, controlAutomat)
 
 
+    # todo chyba pri otvarani suboru
+
+
 class TestGoodsManagement(unittest.TestCase):
     def testRowInsert(self):
         automat = Automat(1, 1)
