@@ -190,7 +190,3 @@ class Console:
             print("Niekde nastala chyba!")
 
         return False
-
-
-
-

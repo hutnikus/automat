@@ -1,7 +1,7 @@
 from modules.cashregister import *
 from modules.row import Row
 import json
-from typing import Union
+from typing import Union, List
 
 
 class EmptyError(Exception):
@@ -9,14 +9,14 @@ class EmptyError(Exception):
 
 
 class Automat:
-    def __init__(self, height=5, width=5):
-        self.items = [[None for j in range(width)] for i in range(height)]
+    def __init__(self, height: int = 5, width: int = 5):
+        self.items: List[List[Union[None, Row]]] = [[None for _ in range(width)] for _ in range(height)]
         self.cashRegister = CashRegister()
 
     def __eq__(self, other):
         return self.items == other.items and self.cashRegister == other.cashRegister
 
-    def getCatalog(self):
+    def getCatalog(self) -> str:
         retString = ""
         for i, col in enumerate(self.items):
             for j, row in enumerate(col):
@@ -24,10 +24,10 @@ class Automat:
                     retString += f"[{i},{j}] - {row.goods} ({row.price:.2f}€)\n"
         return retString
 
-    def _checkRowColInBounds(self, row, col):
+    def _checkRowColInBounds(self, row: int, col: int) -> bool:
         return 0 <= row < len(self.items) and 0 <= col < len(self.items[row])
 
-    def setRow(self, rowNumber: int, colNumber: int, goodsName: str, price: float, quantity: int = 0):
+    def setRow(self, rowNumber: int, colNumber: int, goodsName: str, price: float, quantity: int = 0) -> bool:
         if not self._checkRowColInBounds(rowNumber, colNumber):
             return False
         self.items[rowNumber][colNumber] = Row(quantity, Decimal(price), goodsName)
@@ -95,5 +95,4 @@ class Automat:
 
 if __name__ == '__main__':
     automat = Automat(2, 3)
-    print(automat.setRow(1, 1, "COKE", 1.5, 5))
     print(automat.getCatalog())
