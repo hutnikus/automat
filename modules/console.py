@@ -13,6 +13,8 @@ class QueryType(Enum):
     ADD_ROW_CHOOSE_EMPTY = 2
     ADD_ROW_SET_NAME = 3
     ADD_ROW_SET_PRICE = 4
+    REMOVE_ROW_CHOOSE_ROW = 5
+    REMOVE_ROW_CONFIRM = 6
 
 
 class ResetError(Exception):
@@ -54,13 +56,23 @@ class Console:
 
             if self.mode == Mode.ADMIN:
                 commands += "10 - pridaj rad\n"
+                commands += "11 - odstráň rad\n"
         elif self.currentQuery == QueryType.SET_USER_MODE:
             commands += "0 - mód zákazník\n"
             commands += "1 - mód admin\n"
         elif self.currentQuery == QueryType.ADD_ROW_CHOOSE_EMPTY:
             commands += "VOĽNÉ POZÍCIE:\n"
-            for i, pos in enumerate(self.getEmptyPositions()):
+            for i, pos in enumerate(self.getPositions("empty")):
                 commands += f"{i} - {pos}\n"
+        elif self.currentQuery == QueryType.REMOVE_ROW_CHOOSE_ROW:
+            for i, pos in enumerate(self.getGoods()[:-1].split("\n")):
+                if i == 0:
+                    commands += f"{pos}\n"
+                    continue
+                commands += f"{i-1} - {pos}\n"
+        elif self.currentQuery == QueryType.REMOVE_ROW_CONFIRM:
+            commands += "0 - Nie\n"
+            commands += "1 - Áno, odstrániť rad.\n"
         return commands[:-1]
 
     def getQueryText(self):
@@ -74,6 +86,10 @@ class Console:
             return "Zadaj meno tovaru: "
         if self.currentQuery == QueryType.ADD_ROW_SET_PRICE:
             return "Zadaj cenu tovaru: "
+        if self.currentQuery == QueryType.REMOVE_ROW_CHOOSE_ROW:
+            return "Zadaj pozíciu, ktorú chceš uvoľniť: "
+        if self.currentQuery == QueryType.REMOVE_ROW_CONFIRM:
+            return "Ozaj chcete odstrániť rad? "
 
         return ""
 
@@ -92,6 +108,10 @@ class Console:
             return self.addRowSetName(words)
         if self.currentQuery == QueryType.ADD_ROW_SET_PRICE:
             return self.addRowSetPrice(words)
+        if self.currentQuery == QueryType.REMOVE_ROW_CHOOSE_ROW:
+            return self.chooseRowToRemove(words)
+        if self.currentQuery == QueryType.REMOVE_ROW_CONFIRM:
+            return self.confirmRemoveRow(words)
 
         return False
 
@@ -106,8 +126,12 @@ class Console:
         if self.mode == Mode.ADMIN:
             if words[0] == "10":
                 return self.startAddingRows()
+            if words[0] == "11":
+                return self.startRemovingRows()
 
     def setMode(self, words):
+        if len(words) != 1:
+            return False
         try:
             int(words[0])
         except ValueError:
@@ -121,15 +145,29 @@ class Console:
         self.cancelAction()
 
     def getGoods(self):
-        retStr = f"Rozmer automatu | vyska: {len(self.automat.items)}, sirka: {len(self.automat.items[0])}\n"
-        retStr += self.automat.getCatalog()
+        retStr = f"Rozmer automatu | výška: {len(self.automat.items)}, šírka: {len(self.automat.items[0])}\n"
+        catalog = self.automat.getCatalog()
+        if catalog:
+            retStr += catalog
+        else:
+            retStr += "Prázdny automat!"
         return retStr
 
-    def getEmptyPositions(self) -> list:
+    def getPositions(self, typeStr: str) -> list:
         retList = []
         for i in range(len(self.automat.items)):
             for j in range(len(self.automat.items[0])):
-                if self.automat.items[i][j] is None:
+                if self.automat.items[i][j] is None and typeStr == "empty":
+                    retList.append((i, j))
+                elif self.automat.items[i][j] is not None and typeStr == "full":
+                    retList.append((i, j))
+        return retList
+
+    def getFullPositions(self) -> list:
+        retList = []
+        for i in range(len(self.automat.items)):
+            for j in range(len(self.automat.items[0])):
+                if self.automat.items[i][j] is not None:
                     retList.append((i, j))
         return retList
 
@@ -138,7 +176,9 @@ class Console:
         return True
 
     def choosePositionToAddRow(self, words):
-        emptyPositions = self.getEmptyPositions()
+        if len(words) != 1:
+            return False
+        emptyPositions = self.getPositions("empty")
         try:
             int(words[0])
         except ValueError:
@@ -190,3 +230,42 @@ class Console:
             print("Niekde nastala chyba!")
 
         return False
+
+    def startRemovingRows(self):
+        self.currentQuery = QueryType.REMOVE_ROW_CHOOSE_ROW
+        return True
+
+    def chooseRowToRemove(self, words):
+        if len(words) != 1:
+            return False
+        fullPositions = self.getPositions("full")
+        try:
+            int(words[0])
+        except ValueError:
+            self.cancelAction()
+
+        if int(words[0]) in range(len(fullPositions)):
+            self.stack.append(fullPositions[int(words[0])])
+            self.currentQuery = QueryType.REMOVE_ROW_CONFIRM
+            return True
+
+        print("Nesprávne číslo!")
+        return True
+
+    def confirmRemoveRow(self, words):
+        if len(words) != 1:
+            return False
+        if words[0] == "1":
+            return self.finishRemovingRow()
+        if words[0] == "0":
+            return self.startRemovingRows()
+        return False
+
+    def finishRemovingRow(self):
+        row, col = self.stack.pop()
+        if not self.automat.removeRow(row, col):
+            print("Niekde nastala chyba!")
+        return False
+
+
+

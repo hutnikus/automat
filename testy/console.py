@@ -33,16 +33,19 @@ class ConsoleTest(unittest.TestCase):
         automat.addRow(1, 0, "KEKSIK", 1, 0)
         console = Console(automat, False)
 
-        self.assertEqual(console.getEmptyPositions(), [(0, 0)])
+        self.assertEqual(console.getPositions("empty"), [(0, 0)])
 
     def testGetGoods(self):
         automat = Automat(2, 1)
         console = Console(automat, False)
 
-        self.assertEqual(console.getGoods(), "Rozmer automatu | vyska: 2, sirka: 1\n")
+        self.assertEqual(console.getGoods(), "Rozmer automatu | výška: 2, šírka: 1\nPrázdny automat!")
 
         automat.addRow(1, 0, "KEKSIK", 1, 0)
-        self.assertEqual(console.getGoods(), "Rozmer automatu | vyska: 2, sirka: 1\n[1,0] - KEKSIK (1.00€)\n")
+        self.assertEqual(console.getGoods(), "Rozmer automatu | výška: 2, šírka: 1\n[1,0] - KEKSIK (1.00€)\n")
+
+
+class ConsoleAddRowTest(unittest.TestCase):
 
     def testAddCorrectRow(self):
         automat = Automat(2, 2)
@@ -84,6 +87,59 @@ class ConsoleTest(unittest.TestCase):
         self.assertEqual(console.currentQuery, QueryType.ADD_ROW_SET_PRICE)
 
         self.assertRaises(ResetError, console.executeCommand, "")
+
+
+class ConsoleRemoveRow(unittest.TestCase):
+    def testRemoveRow(self):
+        automat = Automat(2, 2)
+        console = Console(automat, False)
+        console.setMode("1")
+        automat.addRow(0, 0, "KEKSIK", 1, 0)
+
+        # start renoval
+        console.executeCommand("11")
+        # choose row
+        console.executeCommand("0")
+        # confirm
+        console.executeCommand("1")
+
+        self.assertIsNone(automat.getRow(0, 0))
+
+    def testIncorrectPosition(self):
+        automat = Automat(2, 2)
+        console = Console(automat, False)
+        console.setMode("1")
+        automat.addRow(0, 0, "KEKSIK", 1, 0)
+
+        # start renoval
+        console.executeCommand("11")
+        # choose incorrect row
+        console.executeCommand("1")
+
+        self.assertEqual(console.currentQuery, QueryType.REMOVE_ROW_CHOOSE_ROW)
+        # choose correct row
+        console.executeCommand("0")
+        # confirm
+        console.executeCommand("1")
+
+        self.assertIsNone(automat.getRow(0, 0))
+
+    def testCancelChoosing(self):
+        automat = Automat(2, 2)
+        console = Console(automat, False)
+        console.setMode("1")
+        automat.addRow(0, 0, "KEKSIK", 1, 0)
+
+        # start renoval
+        console.executeCommand("11")
+        # choose row
+        console.executeCommand("0")
+        # cancel
+        console.executeCommand("0")
+
+        self.assertEqual(console.currentQuery, QueryType.REMOVE_ROW_CHOOSE_ROW)
+        self.assertRaises(ResetError, console.executeCommand, "")
+
 
 
 if __name__ == '__main__':
