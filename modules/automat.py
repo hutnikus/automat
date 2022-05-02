@@ -22,7 +22,7 @@ class Automat:
         for i, col in enumerate(self.items):
             for j, row in enumerate(col):
                 if isinstance(row, Row):
-                    retString += f"[{i},{j}] - {row.goods} ({row.price:.2f}€)\n"
+                    retString += f"[{i},{j}] - {row.goods} ({row.price:.2f}€) - {row.quantity}ks\n"
         return retString
 
     def _checkRowColInBounds(self, row: int, col: int) -> bool:

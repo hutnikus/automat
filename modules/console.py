@@ -15,6 +15,8 @@ class QueryType(Enum):
     ADD_ROW_SET_PRICE = 4
     REMOVE_ROW_CHOOSE_ROW = 5
     REMOVE_ROW_CONFIRM = 6
+    CHANGE_ROW_PRICE = 7
+    CHANGE_ROW_PRICE_NEW_PRICE = 8
 
 
 class ResetError(Exception):
@@ -57,6 +59,7 @@ class Console:
             if self.mode == Mode.ADMIN:
                 commands += "10 - pridaj rad\n"
                 commands += "11 - odstráň rad\n"
+                commands += "12 - zmeň cenu radu\n"
         elif self.currentQuery == QueryType.SET_USER_MODE:
             commands += "0 - mód zákazník\n"
             commands += "1 - mód admin\n"
@@ -73,6 +76,15 @@ class Console:
         elif self.currentQuery == QueryType.REMOVE_ROW_CONFIRM:
             commands += "0 - Nie\n"
             commands += "1 - Áno, odstrániť rad.\n"
+        elif self.currentQuery == QueryType.CHANGE_ROW_PRICE:
+            for i, pos in enumerate(self.getGoods()[:-1].split("\n")):
+                if i == 0:
+                    commands += f"{pos}\n"
+                    continue
+                commands += f"{i-1} - {pos}\n"
+        elif self.currentQuery == QueryType.CHANGE_ROW_PRICE_NEW_PRICE:
+            item = self.automat.getRow(*self.stack[-1])
+            commands += f"Pôvodná cena: {item.price}€\n"
         return commands[:-1]
 
     def getQueryText(self):
@@ -90,6 +102,10 @@ class Console:
             return "Zadaj pozíciu, ktorú chceš uvoľniť: "
         if self.currentQuery == QueryType.REMOVE_ROW_CONFIRM:
             return "Ozaj chcete odstrániť rad? "
+        if self.currentQuery == QueryType.CHANGE_ROW_PRICE:
+            return "Zadaj pozíciu, ktorej chceš zmeniť cenu: "
+        if self.currentQuery == QueryType.CHANGE_ROW_PRICE_NEW_PRICE:
+            return "Zadaj novú cenu: "
 
         return ""
 
@@ -112,6 +128,10 @@ class Console:
             return self.chooseRowToRemove(words)
         if self.currentQuery == QueryType.REMOVE_ROW_CONFIRM:
             return self.confirmRemoveRow(words)
+        if self.currentQuery == QueryType.CHANGE_ROW_PRICE:
+            return self.selectRowToChangePrice(words)
+        if self.currentQuery == QueryType.CHANGE_ROW_PRICE_NEW_PRICE:
+            return self.changePrice(words)
 
         return False
 
@@ -128,6 +148,8 @@ class Console:
                 return self.startAddingRows()
             if words[0] == "11":
                 return self.startRemovingRows()
+            if words[0] == "12":
+                return self.startChangingRowPrice()
 
     def setMode(self, words):
         if len(words) != 1:
@@ -267,5 +289,46 @@ class Console:
             print("Niekde nastala chyba!")
         return False
 
+    def startChangingRowPrice(self):
+        self.currentQuery = QueryType.CHANGE_ROW_PRICE
+        return True
 
+    def selectRowToChangePrice(self, words):
+        if len(words) != 1:
+            return False
+        fullPositions = self.getPositions("full")
+        try:
+            int(words[0])
+        except ValueError:
+            self.cancelAction()
 
+        if int(words[0]) in range(len(fullPositions)):
+            self.stack.append(fullPositions[int(words[0])])
+            self.currentQuery = QueryType.CHANGE_ROW_PRICE_NEW_PRICE
+            return True
+
+        print("Nesprávne číslo!")
+        return True
+
+    def changePrice(self, words):
+        def isCorrectNumber(num):
+            try:
+                return float(num) > 0
+            except ValueError:
+                return False
+
+        if len(words) != 1:
+            return False
+
+        if isCorrectNumber(words[0]):
+            self.stack.append(float(words[0]))
+            return self.finishChangingPrice()
+
+        print("Cena tovaru musí byť kladné číslo!")
+        return True
+
+    def finishChangingPrice(self):
+        price = self.stack.pop()
+        row, col = self.stack.pop()
+        self.automat.getRow(row, col).price = price
+        return False

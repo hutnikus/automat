@@ -141,6 +141,50 @@ class ConsoleRemoveRow(unittest.TestCase):
         self.assertRaises(ResetError, console.executeCommand, "")
 
 
+class TestChangePrice(unittest.TestCase):
+    def testChangePrice(self):
+        automat = Automat(2, 2)
+        console = Console(automat, False)
+        console.setMode("1")
+        automat.addRow(0, 0, "KEKSIK", 1, 0)
+
+        # start changing price
+        console.executeCommand("12")
+        # choose row
+        console.executeCommand("0")
+        # set price
+        console.executeCommand("5")
+
+        self.assertEqual(automat.getRow(0, 0).price, 5)
+
+    def testIncorrectPrice(self):
+        automat = Automat(2, 2)
+        console = Console(automat, False)
+        console.setMode("1")
+        automat.addRow(0, 0, "KEKSIK", 1, 0)
+
+        # start changing price
+        console.executeCommand("12")
+        # choose incorrect row
+        console.executeCommand("1")
+
+        self.assertEqual(console.currentQuery, QueryType.CHANGE_ROW_PRICE)
+
+        # choose correct row
+        console.executeCommand("0")
+
+        # set incorrect price
+        console.executeCommand("-5")
+
+        self.assertEqual(console.currentQuery, QueryType.CHANGE_ROW_PRICE_NEW_PRICE)
+
+        # set correct price
+        console.executeCommand("5")
+
+        self.assertEqual(automat.getRow(0, 0).price, 5)
+
+
+
 
 if __name__ == '__main__':
     unittest.main()
