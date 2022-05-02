@@ -85,7 +85,7 @@ class Automat:
         if not os.path.exists(path):
             raise FileNotFoundError("Súbor neexistuje!")
 
-        with open(filename, "r") as file:
+        with open(path, "r") as file:
             data = json.load(file)
             self.loadFromData(data)
 
