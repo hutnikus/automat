@@ -1,5 +1,6 @@
+import os
 import unittest
-from modules.automat import Automat, EmptyError
+from modules.automat import Automat, EmptyError, getRootDirectory
 from modules.row import Row
 from decimal import Decimal
 
@@ -96,12 +97,13 @@ class AutomatDataTest(unittest.TestCase):
                         '10, "1e": 0, "50c": 0, "20c": 0, "10c": 0, "5c": 0, "2c": 0, "1c": 0}, "coins": {"2e": 0, ' \
                         '"1e": 0, "50c": 0, "20c": 0, "10c": 0, "5c": 0, "2c": 0, "1c": 0}, "account": "10.00"}}'
 
-        filename = "../files/data.json"
+        filename = "data.json"
         automat.save(filename)
-        with open(filename, "r") as file:
-            string = file.read()
 
-        self.assertEqual(string, controlString)
+        path = os.path.join(getRootDirectory(), "files", filename)
+
+        with open(path) as file:
+            self.assertEqual(controlString, file.read())
 
     def testLoad(self):
         automat = Automat(1, 2)
@@ -109,7 +111,7 @@ class AutomatDataTest(unittest.TestCase):
         automat.cashRegister.buffer["2e"] += 10
         automat.cashRegister.account += 10
 
-        filename = "../files/data.json"
+        filename = "data.json"
         automat.save(filename)
 
         controlAutomat = Automat(1, 2)
@@ -123,16 +125,13 @@ class AutomatDataTest(unittest.TestCase):
         automat.cashRegister.buffer["2e"] += 10
         automat.cashRegister.account += 10
 
-        filename = "../files/data.json"
+        filename = "data.json"
         automat.save(filename)
 
         controlAutomat = Automat(5, 5)
         controlAutomat.load(filename)
 
         self.assertEqual(automat, controlAutomat)
-
-
-    # todo chyba pri otvarani suboru
 
 
 class TestGoodsManagement(unittest.TestCase):

@@ -2,6 +2,7 @@ from modules.cashregister import *
 from modules.row import Row
 import json
 from typing import Union, List
+import os
 
 
 class EmptyError(Exception):
@@ -70,11 +71,20 @@ class Automat:
         self.items = [[Row.createFromData(row) for row in col] for col in data["items"]]
 
     def save(self, filename):
+        rootDir = getRootDirectory()
+        if not os.path.exists(os.path.join(rootDir, "files")):
+            os.makedirs(os.path.join(rootDir, "files"))
+
         data = self.getData()
-        with open(filename, "w") as file:
+        with open(os.path.join(rootDir,"files",filename), "w") as file:
             json.dump(data, file)
 
     def load(self, filename):
+        path = os.path.join(getRootDirectory(), "files", filename)
+
+        if not os.path.exists(path):
+            raise FileNotFoundError("Súbor neexistuje!")
+
         with open(filename, "r") as file:
             data = json.load(file)
             self.loadFromData(data)
@@ -92,6 +102,15 @@ class Automat:
 
         return True
 
+def getRootDirectory():
+    def recursiveFindParent(path):
+        files = os.listdir(path)
+        if "modules" in files:
+            return path
+        return recursiveFindParent(os.path.dirname(path))
+
+    dirname = recursiveFindParent(os.path.dirname(__file__))
+    return dirname
 
 if __name__ == '__main__':
     automat = Automat(2, 3)
