@@ -56,6 +56,12 @@ class CashRegister:
             self.buffer[coin] += change[coin]
         return True
 
+    def insertCoin(self, coin: str) -> bool:
+        if coin not in self.coins:
+            return False
+        self.coins[coin] += 1
+        return True
+
     @staticmethod
     def getCoinValue(coin: str) -> Union[Decimal, None, int]:
         valueDict = {

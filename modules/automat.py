@@ -9,6 +9,13 @@ class EmptyError(Exception):
     pass
 
 
+class NotEnoughMoneyError(Exception):
+    pass
+
+class NotEnoughChangeError(Exception):
+    pass
+
+
 class Automat:
     def __init__(self, height: int = 5, width: int = 5):
         self.items: List[List[Union[None, Row]]] = [[None for _ in range(width)] for _ in range(height)]
@@ -101,6 +108,30 @@ class Automat:
         self.cashRegister.addToAccount(row.price)
 
         return True
+
+    def insertCoin(self, coin: str) -> bool:
+        return self.cashRegister.insertCoin(coin)
+
+    def buyItemWithCash(self, row: int, col: int) -> dict:
+        row = self.getRow(row, col)
+        if not row:
+            raise EmptyError("Zvolené miesto je prázdne")
+
+        if row.quantity == 0:
+            raise EmptyError("Zvolené miesto je prázdne")
+
+        if not self.cashRegister.enoughCoinsInBuffer(row.price):
+            raise NotEnoughMoneyError("Nedostatok peňazí na zaplatenie")
+
+        changeResult = self.cashRegister.payCashGetChange(row.price)
+
+        if not changeResult[1]:
+            raise NotEnoughChangeError("Nedostatok peňazí na vrátenie")
+
+        row.adjustQuantity(-1)
+
+        return changeResult[0]
+
 
 def getRootDirectory():
     def recursiveFindParent(path):

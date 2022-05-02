@@ -1,6 +1,6 @@
 import os
 import unittest
-from modules.automat import Automat, EmptyError, getRootDirectory
+from modules.automat import Automat, EmptyError, getRootDirectory, NotEnoughChangeError, NotEnoughMoneyError
 from modules.row import Row
 from decimal import Decimal
 
@@ -209,6 +209,83 @@ class TestPayment(unittest.TestCase):
         self.assertTrue(automat.addRow(0, 0, "KOFOLA", 1.05, 0))
 
         self.assertRaises(EmptyError, automat.buyItemWithCard, 0, 0)
+
+    def testPayByCash(self):
+        automat = Automat(1, 1)
+        automat.cashRegister.coins = {
+            "2e": 10,
+            "1e": 10,
+            "50c": 10,
+            "20c": 10,
+            "10c": 10,
+            "5c": 10,
+            "2c": 10,
+            "1c": 10,
+        }
+        self.assertTrue(automat.addRow(0, 0, "KOFOLA", 1.05, 5))
+
+        automat.cashRegister.buffer["2e"] = 1
+
+        change = automat.buyItemWithCash(0, 0)
+
+        self.assertEqual(change, {'50c': 1, '20c': 2, '5c': 1})
+
+    def testPayByCashEmpty(self):
+        automat = Automat(1, 1)
+
+        self.assertRaises(EmptyError, automat.buyItemWithCash, 0, 0)
+
+    def testPayByCashEmpty2(self):
+        automat = Automat(1, 1)
+        self.assertTrue(automat.addRow(0, 0, "KOFOLA", 1.05, 0))
+
+        self.assertRaises(EmptyError, automat.buyItemWithCash, 0, 0)
+
+    def testPayByCashNotEnough(self):
+        automat = Automat(1, 1)
+        automat.cashRegister.coins = {
+            "2e": 10,
+            "1e": 10,
+            "50c": 10,
+            "20c": 10,
+            "10c": 10,
+            "5c": 10,
+            "2c": 10,
+            "1c": 10,
+        }
+        self.assertTrue(automat.addRow(0, 0, "KOFOLA", 1.05, 5))
+
+        self.assertRaises(NotEnoughMoneyError, automat.buyItemWithCash, 0, 0)
+
+    def testPayByCashNotEnough2(self):
+        automat = Automat(1, 1)
+        automat.cashRegister.coins = {
+            "2e": 10,
+            "1e": 10,
+            "50c": 10,
+            "20c": 10,
+            "10c": 10,
+            "5c": 10,
+            "2c": 10,
+            "1c": 10,
+        }
+        self.assertTrue(automat.addRow(0, 0, "KOFOLA", 5.0, 5))
+
+        automat.cashRegister.buffer["2e"] = 1
+        automat.cashRegister.buffer["1e"] = 1
+        automat.cashRegister.buffer["50c"] = 1
+        automat.cashRegister.buffer["20c"] = 1
+        automat.cashRegister.buffer["10c"] = 1
+        automat.cashRegister.buffer["5c"] = 1
+        automat.cashRegister.buffer["2c"] = 1
+        automat.cashRegister.buffer["1c"] = 1
+
+        with self.assertRaises(NotEnoughMoneyError):
+            automat.buyItemWithCash(0, 0)
+
+
+
+
 
 
 if __name__ == '__main__':
