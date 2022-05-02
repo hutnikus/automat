@@ -42,7 +42,7 @@ class ConsoleTest(unittest.TestCase):
         self.assertEqual(console.getGoods(), "Rozmer automatu | výška: 2, šírka: 1\nPrázdny automat!")
 
         automat.addRow(1, 0, "KEKSIK", 1, 0)
-        self.assertEqual(console.getGoods(), "Rozmer automatu | výška: 2, šírka: 1\n[1,0] - KEKSIK (1.00€)\n")
+        self.assertEqual(console.getGoods(), "Rozmer automatu | výška: 2, šírka: 1\n[1,0] - KEKSIK (1.00€) - 0ks\n")
 
 
 class ConsoleAddRowTest(unittest.TestCase):
@@ -182,6 +182,50 @@ class TestChangePrice(unittest.TestCase):
         console.executeCommand("5")
 
         self.assertEqual(automat.getRow(0, 0).price, 5)
+
+
+class TestChangeQuantity(unittest.TestCase):
+    def testChangeQuantity(self):
+        automat = Automat(2, 2)
+        console = Console(automat, False)
+        console.setMode("1")
+        automat.addRow(0, 0, "KEKSIK", 1, 0)
+
+        # start changing quantity
+        console.executeCommand("13")
+        # choose row
+        console.executeCommand("0")
+        # set quantity
+        console.executeCommand("5")
+
+        self.assertEqual(automat.getRow(0, 0).quantity, 5)
+
+    def testIncorrectQuantity(self):
+        automat = Automat(2, 2)
+        console = Console(automat, False)
+        console.setMode("1")
+        automat.addRow(0, 0, "KEKSIK", 1, 0)
+
+        # start changing quantity
+        console.executeCommand("13")
+        # choose incorrect row
+        console.executeCommand("1")
+
+        self.assertEqual(console.currentQuery, QueryType.CHANGE_ROW_QUANTITY)
+
+        # choose correct row
+        console.executeCommand("0")
+
+        # set incorrect quantity
+        console.executeCommand("-5")
+
+        self.assertEqual(console.currentQuery, QueryType.CHANGE_ROW_QUANTITY_NEW_QUANTITY)
+
+        # set correct quantity
+        console.executeCommand("5")
+
+        self.assertEqual(automat.getRow(0, 0).quantity, 5)
+
 
 
 

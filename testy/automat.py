@@ -47,10 +47,10 @@ class AutomatTest(unittest.TestCase):
         automat.setRow(1, 0, "FREYER", 999.99, 5)
 
         catalog = automat.getCatalog()
-        controlCatalog = "[0,0] - KAVENKA (0.01€)\n" \
-                         "[0,1] - HORALKA (5.50€)\n" \
-                         "[1,0] - FREYER (999.99€)\n" \
-                         "[1,1] - COKE (1.50€)\n"
+        controlCatalog = "[0,0] - KAVENKA (0.01€) - 5ks\n" \
+                         "[0,1] - HORALKA (5.50€) - 5ks\n" \
+                         "[1,0] - FREYER (999.99€) - 5ks\n" \
+                         "[1,1] - COKE (1.50€) - 5ks\n"
 
         self.assertEqual(catalog, controlCatalog)
 

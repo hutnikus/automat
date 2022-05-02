@@ -17,6 +17,8 @@ class QueryType(Enum):
     REMOVE_ROW_CONFIRM = 6
     CHANGE_ROW_PRICE = 7
     CHANGE_ROW_PRICE_NEW_PRICE = 8
+    CHANGE_ROW_QUANTITY = 9
+    CHANGE_ROW_QUANTITY_NEW_QUANTITY = 10
 
 
 class ResetError(Exception):
@@ -60,6 +62,7 @@ class Console:
                 commands += "10 - pridaj rad\n"
                 commands += "11 - odstráň rad\n"
                 commands += "12 - zmeň cenu radu\n"
+                commands += "13 - zmeň počet kusov\n"
         elif self.currentQuery == QueryType.SET_USER_MODE:
             commands += "0 - mód zákazník\n"
             commands += "1 - mód admin\n"
@@ -85,6 +88,15 @@ class Console:
         elif self.currentQuery == QueryType.CHANGE_ROW_PRICE_NEW_PRICE:
             item = self.automat.getRow(*self.stack[-1])
             commands += f"Pôvodná cena: {item.price}€\n"
+        elif self.currentQuery == QueryType.CHANGE_ROW_QUANTITY:
+            for i, pos in enumerate(self.getGoods()[:-1].split("\n")):
+                if i == 0:
+                    commands += f"{pos}\n"
+                    continue
+                commands += f"{i - 1} - {pos}\n"
+        elif self.currentQuery == QueryType.CHANGE_ROW_QUANTITY_NEW_QUANTITY:
+            item = self.automat.getRow(*self.stack[-1])
+            commands += f"Pôvodné množstvo radu {item.goods}: {item.quantity}\n"
         return commands[:-1]
 
     def getQueryText(self):
@@ -106,6 +118,10 @@ class Console:
             return "Zadaj pozíciu, ktorej chceš zmeniť cenu: "
         if self.currentQuery == QueryType.CHANGE_ROW_PRICE_NEW_PRICE:
             return "Zadaj novú cenu: "
+        if self.currentQuery == QueryType.CHANGE_ROW_QUANTITY:
+            return "Zadaj pozíciu, ktorej chceš zmeniť množstvo: "
+        if self.currentQuery == QueryType.CHANGE_ROW_QUANTITY_NEW_QUANTITY:
+            return "Zadaj nové množstvo: "
 
         return ""
 
@@ -132,6 +148,10 @@ class Console:
             return self.selectRowToChangePrice(words)
         if self.currentQuery == QueryType.CHANGE_ROW_PRICE_NEW_PRICE:
             return self.changePrice(words)
+        if self.currentQuery == QueryType.CHANGE_ROW_QUANTITY:
+            return self.selectRowToChangeQuantity(words)
+        if self.currentQuery == QueryType.CHANGE_ROW_QUANTITY_NEW_QUANTITY:
+            return self.changeQuantity(words)
 
         return False
 
@@ -150,6 +170,8 @@ class Console:
                 return self.startRemovingRows()
             if words[0] == "12":
                 return self.startChangingRowPrice()
+            if words[0] == "13":
+                return self.startChangingRowQuantity()
 
     def setMode(self, words):
         if len(words) != 1:
@@ -331,4 +353,48 @@ class Console:
         price = self.stack.pop()
         row, col = self.stack.pop()
         self.automat.getRow(row, col).price = price
+        return False
+
+    def startChangingRowQuantity(self):
+        self.currentQuery = QueryType.CHANGE_ROW_QUANTITY
+        return True
+
+    def selectRowToChangeQuantity(self, words):
+        if len(words) != 1:
+            return False
+        fullPositions = self.getPositions("full")
+        try:
+            int(words[0])
+        except ValueError:
+            self.cancelAction()
+
+        if int(words[0]) in range(len(fullPositions)):
+            self.stack.append(fullPositions[int(words[0])])
+            self.currentQuery = QueryType.CHANGE_ROW_QUANTITY_NEW_QUANTITY
+            return True
+
+        print("Nesprávne číslo!")
+        return True
+
+    def changeQuantity(self, words):
+        def isCorrectNumber(num):
+            try:
+                return int(num) >= 0
+            except ValueError:
+                return False
+
+        if len(words) != 1:
+            return False
+
+        if isCorrectNumber(words[0]):
+            self.stack.append(int(words[0]))
+            return self.finishChangingQuantity()
+
+        print("Množstvo tovaru musí byť kladné celé číslo!")
+        return True
+
+    def finishChangingQuantity(self):
+        quantity = self.stack.pop()
+        row, col = self.stack.pop()
+        self.automat.getRow(row, col).quantity = quantity
         return False
