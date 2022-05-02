@@ -141,4 +141,7 @@ class CashRegister:
 
         return change, True
 
+    def getTotalAccountValue(self) -> Decimal:
+        return self.account + self.getCoinsSum()
+
 
