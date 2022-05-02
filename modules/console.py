@@ -19,6 +19,8 @@ class QueryType(Enum):
     CHANGE_ROW_PRICE_NEW_PRICE = 8
     CHANGE_ROW_QUANTITY = 9
     CHANGE_ROW_QUANTITY_NEW_QUANTITY = 10
+    BUY_ROW_CHOOSE_ROW = 11
+    BUY_ROW_SELECT_PAYMENT = 12
 
 
 class ResetError(Exception):
@@ -51,12 +53,22 @@ class Console:
             return "admin"
         return "¯\\_(ツ)_/¯"
 
+    def getFullRowSelection(self):
+        commands = ""
+        for i, pos in enumerate(self.getGoods()[:-1].split("\n")):
+            if i == 0:
+                commands += f"{pos}\n"
+                continue
+            commands += f"{i - 1} - {pos}\n"
+        return commands
+
     def getCommandsList(self):
         commands = "#" * 20 + "\n"
         commands += f"--mód {self.getCurrentMode()}--\n"
         if self.currentQuery == QueryType.COMMAND:
             commands += "0 - nastav mód\n"
             commands += "1 - zobraz stav tovarov\n"
+            commands += "2 - nákup tovaru\n"
 
             if self.mode == Mode.ADMIN:
                 commands += "10 - pridaj rad\n"
@@ -71,32 +83,25 @@ class Console:
             for i, pos in enumerate(self.getPositions("empty")):
                 commands += f"{i} - {pos}\n"
         elif self.currentQuery == QueryType.REMOVE_ROW_CHOOSE_ROW:
-            for i, pos in enumerate(self.getGoods()[:-1].split("\n")):
-                if i == 0:
-                    commands += f"{pos}\n"
-                    continue
-                commands += f"{i-1} - {pos}\n"
+            commands += self.getFullRowSelection()
         elif self.currentQuery == QueryType.REMOVE_ROW_CONFIRM:
             commands += "0 - Nie\n"
             commands += "1 - Áno, odstrániť rad.\n"
         elif self.currentQuery == QueryType.CHANGE_ROW_PRICE:
-            for i, pos in enumerate(self.getGoods()[:-1].split("\n")):
-                if i == 0:
-                    commands += f"{pos}\n"
-                    continue
-                commands += f"{i-1} - {pos}\n"
+            commands += self.getFullRowSelection()
         elif self.currentQuery == QueryType.CHANGE_ROW_PRICE_NEW_PRICE:
             item = self.automat.getRow(*self.stack[-1])
             commands += f"Pôvodná cena: {item.price}€\n"
         elif self.currentQuery == QueryType.CHANGE_ROW_QUANTITY:
-            for i, pos in enumerate(self.getGoods()[:-1].split("\n")):
-                if i == 0:
-                    commands += f"{pos}\n"
-                    continue
-                commands += f"{i - 1} - {pos}\n"
+            commands += self.getFullRowSelection()
         elif self.currentQuery == QueryType.CHANGE_ROW_QUANTITY_NEW_QUANTITY:
             item = self.automat.getRow(*self.stack[-1])
             commands += f"Pôvodné množstvo radu {item.goods}: {item.quantity}\n"
+        elif self.currentQuery == QueryType.BUY_ROW_CHOOSE_ROW:
+            commands += self.getFullRowSelection()
+        elif self.currentQuery == QueryType.BUY_ROW_SELECT_PAYMENT:
+            commands += "0 - kartou\n"
+            commands += "1 - hotovosť\n"
         return commands[:-1]
 
     def getQueryText(self):
@@ -122,6 +127,10 @@ class Console:
             return "Zadaj pozíciu, ktorej chceš zmeniť množstvo: "
         if self.currentQuery == QueryType.CHANGE_ROW_QUANTITY_NEW_QUANTITY:
             return "Zadaj nové množstvo: "
+        if self.currentQuery == QueryType.BUY_ROW_CHOOSE_ROW:
+            return "Zadaj pozíciu tovaru, ktorý chceš kupiť: "
+        if self.currentQuery == QueryType.BUY_ROW_SELECT_PAYMENT:
+            return "Zadaj spôsob platby: "
 
         return ""
 
@@ -152,6 +161,10 @@ class Console:
             return self.selectRowToChangeQuantity(words)
         if self.currentQuery == QueryType.CHANGE_ROW_QUANTITY_NEW_QUANTITY:
             return self.changeQuantity(words)
+        if self.currentQuery == QueryType.BUY_ROW_CHOOSE_ROW:
+            return self.selectRowToBuy(words)
+        if self.currentQuery == QueryType.BUY_ROW_SELECT_PAYMENT:
+            return self.selectPayment(words)
 
         return False
 
@@ -161,6 +174,9 @@ class Console:
             return True
         if words[0] == "1":
             print(self.getGoods())
+            return True
+        if words[0] == "2":
+            self.currentQuery = QueryType.BUY_ROW_CHOOSE_ROW
             return True
 
         if self.mode == Mode.ADMIN:
@@ -398,3 +414,49 @@ class Console:
         row, col = self.stack.pop()
         self.automat.getRow(row, col).quantity = quantity
         return False
+
+    def selectRowToBuy(self, words):
+        if len(words) != 1:
+            return False
+        fullPositions = self.getPositions("full")
+        try:
+            int(words[0])
+        except ValueError:
+            self.cancelAction()
+
+        if int(words[0]) in range(len(fullPositions)):
+            self.stack.append(fullPositions[int(words[0])])
+            self.currentQuery = QueryType.BUY_ROW_SELECT_PAYMENT
+            return True
+
+        print("Nesprávne číslo!")
+        return True
+
+    def selectPayment(self, words):
+        if len(words) != 1:
+            return False
+
+        choice = words[0].strip()
+
+        if choice == "0":
+            return self.payWithCard()
+        elif choice == "1":
+            return self.payWithCash()
+
+        print("Nesprávne číslo!")
+        return True
+
+    def payWithCard(self):
+        row, col = self.stack.pop()
+
+        if self.automat.buyItemWithCard(row, col):
+            print("Zaplatené!")
+            for _ in range(5):
+                print(".")
+
+            item = self.automat.getRow(row, col)
+            print(f"Môžte si vybrať tovar {item.goods}. Platili ste {item.price}€.")
+            return False
+
+        print("Nepodarilo sa zaplatiť!")
+        return True

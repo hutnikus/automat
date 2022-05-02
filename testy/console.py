@@ -227,6 +227,48 @@ class TestChangeQuantity(unittest.TestCase):
         self.assertEqual(automat.getRow(0, 0).quantity, 5)
 
 
+class TestCardPayment(unittest.TestCase):
+    def testCardPayment(self):
+        automat = Automat(2, 2)
+        console = Console(automat, False)
+        console.setMode("1")
+        automat.addRow(0, 0, "KEKSIK", 1, 1)
+
+        self.assertEqual(automat.getRow(0, 0).quantity, 1)
+        self.assertEqual(automat.cashRegister.account, 0)
+
+        # start buying
+        console.executeCommand("2")
+        # choose row
+        console.executeCommand("0")
+        # pay with card
+        console.executeCommand("0")
+
+        self.assertEqual(automat.getRow(0, 0).quantity, 0)
+        self.assertEqual(automat.cashRegister.account, 1)
+
+    def testWrongCardPayment(self):
+        automat = Automat(2, 2)
+        console = Console(automat, False)
+        console.setMode("1")
+        automat.addRow(0, 0, "KEKSIK", 1, 1)
+
+        self.assertEqual(automat.getRow(0, 0).quantity, 1)
+        self.assertEqual(automat.cashRegister.account, 0)
+
+        # start buying
+        console.executeCommand("2")
+        # choose wrong row
+        console.executeCommand("-1")
+        # choose row
+        console.executeCommand("0")
+        # wrong payment type
+        console.executeCommand("2")
+
+        self.assertEqual(automat.getRow(0, 0).quantity, 1)
+
+
+
 
 
 
