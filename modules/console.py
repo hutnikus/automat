@@ -104,7 +104,7 @@ class Console:
                 commands += "11 - odstráň rad\n"
                 commands += "12 - zmeň cenu radu\n"
                 commands += "13 - zmeň počet kusov\n"
-                commands += "14 - uprav stav kasy\n"
+                commands += "14 - management kasy\n"
 
         elif self.currentQuery == QueryType.SET_USER_MODE:
             commands += "0 - mód zákazník\n"
