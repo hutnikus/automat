@@ -1,4 +1,4 @@
-from modules.automat import Automat
+from modules.automat import Automat, EmptyError, NotEnoughMoneyError, NotEnoughChangeError
 from enum import Enum
 
 
@@ -21,6 +21,7 @@ class QueryType(Enum):
     CHANGE_ROW_QUANTITY_NEW_QUANTITY = 10
     BUY_ROW_CHOOSE_ROW = 11
     BUY_ROW_SELECT_PAYMENT = 12
+    PAY_WITH_CASH_INSERT_COINS = 13
 
 
 class ResetError(Exception):
@@ -102,6 +103,18 @@ class Console:
         elif self.currentQuery == QueryType.BUY_ROW_SELECT_PAYMENT:
             commands += "0 - kartou\n"
             commands += "1 - hotovosť\n"
+        elif self.currentQuery == QueryType.PAY_WITH_CASH_INSERT_COINS:
+            commands += f"Momentálny stav peňazí v automate: {self.automat.cashRegister.getBufferSum()}€\n"
+            commands += "0 - 2€\n"
+            commands += "1 - 1€\n"
+            commands += "2 - 0.50€\n"
+            commands += "3 - 0.20€\n"
+            commands += "4 - 0.10€\n"
+            commands += "5 - 0.05€\n"
+            commands += "6 - 0.02€\n"
+            commands += "7 - 0.01€\n"
+            commands += "10 - PLATBA\n"
+            commands += "11 - ZRUŠIŤ\n"
         return commands[:-1]
 
     def getQueryText(self):
@@ -131,6 +144,8 @@ class Console:
             return "Zadaj pozíciu tovaru, ktorý chceš kupiť: "
         if self.currentQuery == QueryType.BUY_ROW_SELECT_PAYMENT:
             return "Zadaj spôsob platby: "
+        if self.currentQuery == QueryType.PAY_WITH_CASH_INSERT_COINS:
+            return "Vložte mincu: "
 
         return ""
 
@@ -165,6 +180,8 @@ class Console:
             return self.selectRowToBuy(words)
         if self.currentQuery == QueryType.BUY_ROW_SELECT_PAYMENT:
             return self.selectPayment(words)
+        if self.currentQuery == QueryType.PAY_WITH_CASH_INSERT_COINS:
+            return self.insertCoins(words)
 
         return False
 
@@ -250,11 +267,19 @@ class Console:
             return True
         return False
 
-    def cancelAction(self):
-        print()
-        print("Akcia prerušená!")
+    def cancelAction(self, printMsg=True):
+        if printMsg:
+            print()
+            print("Akcia prerušená!")
         self.currentQuery = QueryType.COMMAND
         self.stack = []
+
+        if self.automat.cashRegister.getBufferSum() > 0:
+            print("Automat vracia mince:")
+            vratene = self.automat.cashRegister.returnCoins()
+            for minca in vratene:
+                print(f"{minca.replace('e','€')} {vratene[minca]}x")
+
         raise ResetError()
 
     def addRowSetName(self, words):
@@ -460,3 +485,80 @@ class Console:
 
         print("Nepodarilo sa zaplatiť!")
         return True
+
+    def payWithCash(self):
+        self.currentQuery = QueryType.PAY_WITH_CASH_INSERT_COINS
+        return True
+
+    def insertCoins(self, words):
+        if len(words) != 1:
+            return False
+
+        try:
+            int(words[0])
+        except ValueError:
+            self.cancelAction()
+
+        volba = int(words[0])
+
+        if volba not in [0,1,2,3,4,5,6,7,10,11]:
+            print("Nesprávne číslo!")
+            return True
+
+        mince = {
+            0: "2e",
+            1: "1e",
+            2: "50c",
+            3: "20c",
+            4: "10c",
+            5: "5c",
+            6: "2c",
+            7: "1c"
+        }
+
+        if volba in mince:
+            if not self.automat.cashRegister.insertCoin(mince[volba]):
+                print("Nepodarilo sa vložiť minciu!")
+                self.currentQuery = QueryType.PAY_WITH_CASH_INSERT_COINS
+                return True
+            return True
+
+        if volba == 10:
+            return self.finishCashPayment()
+
+        if volba == 11:
+            self.cancelAction()
+            return False
+
+        print("Nesprávne číslo!")
+        return True
+
+    def finishCashPayment(self):
+        row, col = self.stack.pop()
+
+        changeBack = {}
+        try:
+            changeBack = self.automat.buyItemWithCash(row, col)
+        except EmptyError:
+            print("Zvolené miesto je prázdne!")
+            return False
+        except NotEnoughMoneyError:
+            print("Nevložili ste dostatočné množstvo mincí!")
+            self.stack.append((row, col))
+            self.currentQuery = QueryType.PAY_WITH_CASH_INSERT_COINS
+            return True
+        except NotEnoughChangeError:
+            print("Automat nemá mince na vydaj, skúste neskôr!")
+            self.cancelAction()
+
+        print("Zaplatené!")
+        for _ in range(5):
+            print(".")
+
+        item = self.automat.getRow(row, col)
+        print(f"Môžte si vybrať tovar {item.goods}. Platili ste {item.price}€.")
+        self.automat.cashRegister.addChangeToBuffer(changeBack)
+        print("Automat vracia mince:")
+        vratene = self.automat.cashRegister.returnCoins()
+        for minca in vratene:
+            print(f"{minca.replace('e', '€')} {vratene[minca]}x")

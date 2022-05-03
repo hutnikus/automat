@@ -283,6 +283,16 @@ class TestPayment(unittest.TestCase):
         with self.assertRaises(NotEnoughMoneyError):
             automat.buyItemWithCash(0, 0)
 
+    def testPayCashNotEnoughChage(self):
+        automat = Automat(1, 1)
+        automat.addRow(0, 0, "KOFOLA", 1.05, 5)
+        automat.insertCoin("2e")
+
+        self.assertRaises(NotEnoughChangeError, automat.buyItemWithCash, 0, 0)
+
+        self.assertEqual(automat.cashRegister.returnCoins(), {"2e": 1})
+
+
 
 
 

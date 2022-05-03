@@ -59,7 +59,7 @@ class CashRegister:
     def insertCoin(self, coin: str) -> bool:
         if coin not in self.coins:
             return False
-        self.coins[coin] += 1
+        self.buffer[coin] += 1
         return True
 
     @staticmethod
@@ -150,4 +150,11 @@ class CashRegister:
     def getTotalAccountValue(self) -> Decimal:
         return self.account + self.getCoinsSum()
 
+    def returnCoins(self):
+        ret = {}
+        for coin in self.buffer:
+            if self.buffer[coin] > 0:
+                ret[coin] = self.buffer[coin]
+                self.buffer[coin] = 0
+        return ret
 

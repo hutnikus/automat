@@ -268,7 +268,118 @@ class TestCardPayment(unittest.TestCase):
         self.assertEqual(automat.getRow(0, 0).quantity, 1)
 
 
+class TestCashPayment(unittest.TestCase):
+    def testCashPayment(self):
+        automat = Automat(2, 2)
+        automat.cashRegister.coins = {
+            "2e": 10,
+            "1e": 10,
+            "50c": 10,
+            "20c": 10,
+            "10c": 10,
+            "5c": 10,
+            "2c": 10,
+            "1c": 10,
+        }
+        console = Console(automat, False)
+        console.setMode("1")
+        automat.addRow(0, 0, "KEKSIK", 1.25, 1)
 
+        startSum = automat.cashRegister.getCoinsSum()
+
+        # start buying
+        console.executeCommand("2")
+        # choose row
+        console.executeCommand("0")
+        # pay with cash
+        console.executeCommand("1")
+        # insert 2e
+        console.executeCommand("0")
+
+        self.assertEqual(automat.cashRegister.getBufferSum(), Decimal(2.00))
+
+        # finish paying
+        console.executeCommand("10")
+
+        self.assertEqual(startSum+Decimal(1.25), automat.cashRegister.getCoinsSum())
+
+
+    def testCashPaymentNotEnoughCashBack(self):
+        automat = Automat(2, 2)
+        automat.cashRegister.coins["50c"] += 1
+        console = Console(automat, False)
+        console.setMode("1")
+        automat.addRow(0, 0, "KEKSIK", 1.25, 1)
+
+        startSum = automat.cashRegister.getCoinsSum()
+
+        # start buying
+        console.executeCommand("2")
+        # choose row
+        console.executeCommand("0")
+        # pay with cash
+        console.executeCommand("1")
+        # insert 2e
+        console.executeCommand("0")
+
+        self.assertEqual(automat.cashRegister.getBufferSum(), Decimal(2.00))
+
+        # finish paying
+        with self.assertRaises(ResetError):
+            console.executeCommand("10")
+
+        # no money was taken
+        self.assertEqual(startSum, automat.cashRegister.getCoinsSum())
+
+        # console back to default
+        self.assertEqual(console.currentQuery.value, 0)
+
+
+    def testCashPaymentNotEnoughInserted(self):
+        automat = Automat(2, 2)
+        automat.cashRegister.coins = {
+            "2e": 10,
+            "1e": 10,
+            "50c": 10,
+            "20c": 10,
+            "10c": 10,
+            "5c": 10,
+            "2c": 10,
+            "1c": 10,
+        }
+        console = Console(automat, False)
+        console.setMode("1")
+        automat.addRow(0, 0, "KEKSIK", 1.25, 1)
+
+        startSum = automat.cashRegister.getCoinsSum()
+
+        # start buying
+        console.executeCommand("2")
+        # choose row
+        console.executeCommand("0")
+        # pay with cash
+        console.executeCommand("1")
+        # insert 1e
+        console.executeCommand("1")
+
+        self.assertEqual(automat.cashRegister.getBufferSum(), Decimal(1.00))
+
+        # finish paying
+        console.executeCommand("10")
+
+        # no money was taken
+        self.assertEqual(startSum, automat.cashRegister.getCoinsSum())
+        # buffer still intact
+        self.assertEqual(automat.cashRegister.getBufferSum(), Decimal(1.00))
+
+        # cancel payment
+        with self.assertRaises(ResetError):
+            console.executeCommand("11")
+
+        # buffer empty
+        self.assertEqual(automat.cashRegister.getBufferSum(), Decimal(0.00))
+        # still, no money was taken
+        self.assertEqual(startSum, automat.cashRegister.getCoinsSum())
 
 
 
