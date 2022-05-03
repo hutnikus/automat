@@ -22,10 +22,34 @@ class QueryType(Enum):
     BUY_ROW_CHOOSE_ROW = 11
     BUY_ROW_SELECT_PAYMENT = 12
     PAY_WITH_CASH_INSERT_COINS = 13
+    CHANGE_REGISTER_SELECT_COIN = 14
+    CHANGE_REGISTER_CHANGE_COIN = 15
 
 
 class ResetError(Exception):
     pass
+
+
+COIN_NUMBERS = {
+    0: "2e",
+    1: "1e",
+    2: "50c",
+    3: "20c",
+    4: "10c",
+    5: "5c",
+    6: "2c",
+    7: "1c"
+}
+COIN_VALUES = {
+    "2e": "2.00€",
+    "1e": "1.00€",
+    "50c": "0.50€",
+    "20c": "0.20€",
+    "10c": "0.10€",
+    "5c": "0.05€",
+    "2c": "0.02€",
+    "1c": "0.01€",
+}
 
 
 class Console:
@@ -66,6 +90,10 @@ class Console:
     def getCommandsList(self):
         commands = "#" * 20 + "\n"
         commands += f"--mód {self.getCurrentMode()}--\n"
+
+        if self.currentQuery != QueryType.COMMAND:
+            commands += f"*** kedykoľvek sa môžte vrátiť do menu cez tlačidlo enter ***\n\n"
+
         if self.currentQuery == QueryType.COMMAND:
             commands += "0 - nastav mód\n"
             commands += "1 - zobraz stav tovarov\n"
@@ -76,45 +104,61 @@ class Console:
                 commands += "11 - odstráň rad\n"
                 commands += "12 - zmeň cenu radu\n"
                 commands += "13 - zmeň počet kusov\n"
+                commands += "14 - uprav stav kasy\n"
+
         elif self.currentQuery == QueryType.SET_USER_MODE:
             commands += "0 - mód zákazník\n"
             commands += "1 - mód admin\n"
+
         elif self.currentQuery == QueryType.ADD_ROW_CHOOSE_EMPTY:
             commands += "VOĽNÉ POZÍCIE:\n"
             for i, pos in enumerate(self.getPositions("empty")):
                 commands += f"{i} - {pos}\n"
+
         elif self.currentQuery == QueryType.REMOVE_ROW_CHOOSE_ROW:
             commands += self.getFullRowSelection()
+
         elif self.currentQuery == QueryType.REMOVE_ROW_CONFIRM:
             commands += "0 - Nie\n"
             commands += "1 - Áno, odstrániť rad.\n"
+
         elif self.currentQuery == QueryType.CHANGE_ROW_PRICE:
             commands += self.getFullRowSelection()
+
         elif self.currentQuery == QueryType.CHANGE_ROW_PRICE_NEW_PRICE:
             item = self.automat.getRow(*self.stack[-1])
             commands += f"Pôvodná cena: {item.price}€\n"
+
         elif self.currentQuery == QueryType.CHANGE_ROW_QUANTITY:
             commands += self.getFullRowSelection()
+
         elif self.currentQuery == QueryType.CHANGE_ROW_QUANTITY_NEW_QUANTITY:
             item = self.automat.getRow(*self.stack[-1])
             commands += f"Pôvodné množstvo radu {item.goods}: {item.quantity}\n"
+
         elif self.currentQuery == QueryType.BUY_ROW_CHOOSE_ROW:
             commands += self.getFullRowSelection()
+
         elif self.currentQuery == QueryType.BUY_ROW_SELECT_PAYMENT:
             commands += "0 - kartou\n"
             commands += "1 - hotovosť\n"
+
         elif self.currentQuery == QueryType.PAY_WITH_CASH_INSERT_COINS:
             commands += f"Momentálny stav peňazí v automate: {self.automat.cashRegister.getBufferSum()}€\n"
-            commands += "0 - 2€\n"
-            commands += "1 - 1€\n"
-            commands += "2 - 0.50€\n"
-            commands += "3 - 0.20€\n"
-            commands += "4 - 0.10€\n"
-            commands += "5 - 0.05€\n"
-            commands += "6 - 0.02€\n"
-            commands += "7 - 0.01€\n"
+            for number in COIN_NUMBERS:
+                commands += f"{number} - {COIN_VALUES[COIN_NUMBERS[number]]}\n"
             commands += "10 - PLATBA\n"
-            commands += "11 - ZRUŠIŤ\n"
+
+        elif self.currentQuery == QueryType.CHANGE_REGISTER_SELECT_COIN:
+            commands += f"Momentálny stav peňazí v automate: {self.automat.cashRegister.getCoinsSum()}€\n"
+            coins = self.automat.cashRegister.coins.copy()
+            for number in COIN_NUMBERS:
+                commands += f"{number} - {COIN_VALUES[COIN_NUMBERS[number]]} ({coins[COIN_NUMBERS[number]]}ks)\n"
+
+        elif self.currentQuery == QueryType.CHANGE_REGISTER_CHANGE_COIN:
+            selected = self.stack[-1]
+            commands += f"Pôvodné množstvo: {self.automat.cashRegister.coins[selected]}ks\n"
+
         return commands[:-1]
 
     def getQueryText(self):
@@ -146,6 +190,10 @@ class Console:
             return "Zadaj spôsob platby: "
         if self.currentQuery == QueryType.PAY_WITH_CASH_INSERT_COINS:
             return "Vložte mincu: "
+        if self.currentQuery == QueryType.CHANGE_REGISTER_SELECT_COIN:
+            return "Vyberte mincu, ktorej chcete zmeniť množstvo: "
+        if self.currentQuery == QueryType.CHANGE_REGISTER_CHANGE_COIN:
+            return "Zadajte nové množstvo: "
 
         return ""
 
@@ -182,6 +230,10 @@ class Console:
             return self.selectPayment(words)
         if self.currentQuery == QueryType.PAY_WITH_CASH_INSERT_COINS:
             return self.insertCoins(words)
+        if self.currentQuery == QueryType.CHANGE_REGISTER_SELECT_COIN:
+            return self.selectCoinToChange(words)
+        if self.currentQuery == QueryType.CHANGE_REGISTER_CHANGE_COIN:
+            return self.changeCoinAmount(words)
 
         return False
 
@@ -205,6 +257,8 @@ class Console:
                 return self.startChangingRowPrice()
             if words[0] == "13":
                 return self.startChangingRowQuantity()
+            if words[0] == "14":
+                return self.startChangingRegister()
 
     def setMode(self, words):
         if len(words) != 1:
@@ -243,7 +297,7 @@ class Console:
     def getFullPositions(self) -> list:
         retList = []
         for i in range(len(self.automat.items)):
-            for j in range(len(self.automat.items[0])):
+            for j in range(len(self.automat.items[i])):
                 if self.automat.items[i][j] is not None:
                     retList.append((i, j))
         return retList
@@ -278,21 +332,19 @@ class Console:
         return True
 
     def addRowSetPrice(self, words):
-        def isCorrectNumber(num):
-            try:
-                return float(num) > 0
-            except ValueError:
-                return False
+        try:
+            if len(words) != 1:
+                raise ValueError()
 
-        if len(words) != 1:
-            return False
+            volba = float(words[0])
+            if volba <= 0:
+                raise ValueError()
+        except ValueError:
+            print("Cena tovaru musí byť kladné číslo!")
+            return True
 
-        if isCorrectNumber(words[0]):
-            self.stack.append(float(words[0]))
-            return self.finishAddingRow()
-
-        print("Cena tovaru musí byť kladné číslo!")
-        return True
+        self.stack.append(volba)
+        return self.finishAddingRow()
 
     def finishAddingRow(self):
         price = self.stack.pop()
@@ -309,20 +361,20 @@ class Console:
         return True
 
     def chooseFromRows(self, words, nextQuery, positionType):
-        if len(words) != 1:
-            return False
         try:
-            int(words[0])
-        except ValueError:
-            return False
+            if len(words) != 1:
+                raise ValueError()
 
-        positions = self.getPositions(positionType)
-        if int(words[0]) in range(len(positions)):
-            self.stack.append(positions[int(words[0])])
-            self.currentQuery = nextQuery
+            volba = int(words[0])
+            positions = self.getPositions(positionType)
+            if volba not in range(len(positions)):
+                raise ValueError()
+        except ValueError:
+            print("Nesprávne číslo!")
             return True
 
-        print("Nesprávne číslo!")
+        self.stack.append(positions[volba])
+        self.currentQuery = nextQuery
         return True
 
     def chooseRowToRemove(self, words):
@@ -351,21 +403,19 @@ class Console:
         return self.chooseFromRows(words, QueryType.CHANGE_ROW_PRICE_NEW_PRICE, "full")
 
     def changePrice(self, words):
-        def isCorrectNumber(num):
-            try:
-                return float(num) > 0
-            except ValueError:
-                return False
+        try:
+            if len(words) != 1:
+                raise ValueError()
 
-        if len(words) != 1:
-            return False
+            volba = float(words[0])
+            if volba <= 0:
+                raise ValueError()
+        except ValueError:
+            print("Cena tovaru musí byť kladné číslo!")
+            return True
 
-        if isCorrectNumber(words[0]):
-            self.stack.append(float(words[0]))
-            return self.finishChangingPrice()
-
-        print("Cena tovaru musí byť kladné číslo!")
-        return True
+        self.stack.append(volba)
+        return self.finishChangingPrice()
 
     def finishChangingPrice(self):
         price = self.stack.pop()
@@ -381,21 +431,19 @@ class Console:
         return self.chooseFromRows(words, QueryType.CHANGE_ROW_QUANTITY_NEW_QUANTITY, "full")
 
     def changeQuantity(self, words):
-        def isCorrectNumber(num):
-            try:
-                return int(num) >= 0
-            except ValueError:
-                return False
+        try:
+            if len(words) != 1:
+                raise ValueError()
 
-        if len(words) != 1:
-            return False
+            volba = int(words[0])
+            if volba < 0:
+                raise ValueError()
+        except ValueError:
+            print("Množstvo tovaru musí byť kladné celé číslo!")
+            return True
 
-        if isCorrectNumber(words[0]):
-            self.stack.append(int(words[0]))
-            return self.finishChangingQuantity()
-
-        print("Množstvo tovaru musí byť kladné celé číslo!")
-        return True
+        self.stack.append(volba)
+        return self.finishChangingQuantity()
 
     def finishChangingQuantity(self):
         quantity = self.stack.pop()
@@ -408,16 +456,17 @@ class Console:
 
     def selectPayment(self, words):
         if len(words) != 1:
-            return False
+            print("Nesprávna voľba!")
+            return True
 
         choice = words[0].strip()
 
         if choice == "0":
             return self.payWithCard()
-        elif choice == "1":
+        if choice == "1":
             return self.payWithCash()
 
-        print("Nesprávne číslo!")
+        print("Nesprávna voľba!")
         return True
 
     def payWithCard(self):
@@ -440,44 +489,25 @@ class Console:
         return True
 
     def insertCoins(self, words):
-        if len(words) != 1:
-            return False
-
         try:
-            int(words[0])
+            if len(words) != 1:
+                raise ValueError()
+
+            volba = int(words[0])
+            if volba not in [0, 1, 2, 3, 4, 5, 6, 7, 10]:
+                raise ValueError()
         except ValueError:
-            self.cancelAction()
-
-        volba = int(words[0])
-
-        if volba not in [0, 1, 2, 3, 4, 5, 6, 7, 10, 11]:
-            print("Nesprávne číslo!")
+            print("Nesprávna voľba!")
             return True
 
-        mince = {
-            0: "2e",
-            1: "1e",
-            2: "50c",
-            3: "20c",
-            4: "10c",
-            5: "5c",
-            6: "2c",
-            7: "1c"
-        }
-
-        if volba in mince:
-            if not self.automat.cashRegister.insertCoin(mince[volba]):
-                print("Nepodarilo sa vložiť minciu!")
+        if volba in COIN_NUMBERS:
+            if not self.automat.cashRegister.insertCoin(COIN_NUMBERS[volba]):
+                print("Nepodarilo sa vložiť mincu!")
                 self.currentQuery = QueryType.PAY_WITH_CASH_INSERT_COINS
-                return True
             return True
 
         if volba == 10:
             return self.finishCashPayment()
-
-        if volba == 11:
-            self.cancelAction()
-            return False
 
         print("Nesprávne číslo!")
         return True
@@ -511,3 +541,42 @@ class Console:
         vratene = self.automat.cashRegister.returnCoins()
         for minca in vratene:
             print(f"{minca.replace('e', '€')} {vratene[minca]}x")
+
+        return False
+
+    def startChangingRegister(self):
+        self.currentQuery = QueryType.CHANGE_REGISTER_SELECT_COIN
+        return True
+
+    def selectCoinToChange(self, words):
+        try:
+            if len(words) != 1:
+                raise ValueError()
+
+            volba = int(words[0])
+            if volba not in range(len(COIN_NUMBERS)):
+                raise ValueError()
+        except ValueError:
+            print("Nesprávna voľba!")
+            return True
+
+        self.stack.append(COIN_NUMBERS[volba])
+        self.currentQuery = QueryType.CHANGE_REGISTER_CHANGE_COIN
+        return True
+
+    def changeCoinAmount(self, words):
+        try:
+            if len(words) != 1:
+                raise ValueError()
+
+            volba = int(words[0])
+            if volba < 0:
+                raise ValueError()
+        except ValueError:
+            print("Hodnota musí byť kladné celé číslo alebo 0!")
+            return True
+
+        zadane = self.stack.pop()
+        self.automat.cashRegister.coins[zadane] = int(volba)
+
+        return self.startChangingRegister()

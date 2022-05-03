@@ -364,12 +364,61 @@ class TestCashPayment(unittest.TestCase):
 
         # cancel payment
         with self.assertRaises(ResetError):
-            console.executeCommand("11")
+            console.executeCommand("")
 
         # buffer empty
         self.assertEqual(automat.cashRegister.getBufferSum(), Decimal(0.00))
         # still, no money was taken
         self.assertEqual(startSum, automat.cashRegister.getCoinsSum())
+
+
+class TestChangeRegister(unittest.TestCase):
+    def testChangeRegister(self):
+        automat = Automat(2, 2)
+        console = Console(automat, False)
+        console.setMode("1")
+
+        # start changing register
+        console.executeCommand("14")
+
+        self.assertEqual(automat.cashRegister.coins["2e"], 0)
+
+        # select 2e
+        console.executeCommand("0")
+
+        # check selected query
+        self.assertEqual(console.currentQuery.value, 15)
+
+        # change amount to 10
+        console.executeCommand("10")
+
+        self.assertEqual(automat.cashRegister.coins["2e"], 10)
+
+        self.assertEqual(console.currentQuery.value, 14)
+
+    def testWrongInput(self):
+        automat = Automat(2, 2)
+        console = Console(automat, False)
+        console.setMode("1")
+
+        # start changing register
+        console.executeCommand("14")
+        self.assertEqual(automat.cashRegister.coins["2e"], 0)
+        # select 2e
+        console.executeCommand("0")
+
+        # change amount to -5
+        console.executeCommand("-5")
+
+        # see if register unchanged
+        self.assertEqual(automat.cashRegister.coins["2e"], 0)
+        self.assertEqual(console.currentQuery.value, 15)
+
+        console.executeCommand("1.5")
+
+        # see if register unchanged
+        self.assertEqual(automat.cashRegister.coins["2e"], 0)
+        self.assertEqual(console.currentQuery.value, 15)
 
 
 if __name__ == '__main__':
