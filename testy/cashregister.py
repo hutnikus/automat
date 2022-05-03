@@ -2,6 +2,17 @@ import unittest
 from modules.cashregister import CashRegister, NotEnoughCoinsInRegisterException
 from decimal import Decimal
 
+fullRegister = {
+            "2e": 10,
+            "1e": 10,
+            "50c": 10,
+            "20c": 10,
+            "10c": 10,
+            "5c": 10,
+            "2c": 10,
+            "1c": 10,
+        }
+
 
 class CashRegisterTest(unittest.TestCase):
     def test_spravny_dict(self):
@@ -122,16 +133,7 @@ class TestCash(unittest.TestCase):
 
     def testPayCashEmptyBuffer(self):
         kasa = CashRegister()
-        kasa.coins = {
-            "2e": 10,
-            "1e": 10,
-            "50c": 10,
-            "20c": 10,
-            "10c": 10,
-            "5c": 10,
-            "2c": 10,
-            "1c": 10,
-        }
+        kasa.coins = fullRegister.copy()
 
         with self.assertRaises(ValueError):
             kasa.payCashGetChange(Decimal("1.25"))

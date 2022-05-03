@@ -4,6 +4,17 @@ from modules.automat import Automat, EmptyError, getRootDirectory, NotEnoughChan
 from modules.row import Row
 from decimal import Decimal
 
+fullRegister = {
+            "2e": 10,
+            "1e": 10,
+            "50c": 10,
+            "20c": 10,
+            "10c": 10,
+            "5c": 10,
+            "2c": 10,
+            "1c": 10,
+        }
+
 
 class AutomatTest(unittest.TestCase):
     def test_spravne2dpole(self):
@@ -93,7 +104,8 @@ class AutomatDataTest(unittest.TestCase):
         automat.cashRegister.buffer["2e"] += 10
         automat.cashRegister.account += 10
 
-        controlString = '{"items": [[null, {"quantity": 5, "price": "1.50", "goods": "COKE"}]], "cashRegister": {"buffer": {"2e": ' \
+        controlString = '{"items": [[null, {"quantity": 5, "price": "1.50", "goods": "COKE"}]], "cashRegister": {' \
+                        '"buffer": {"2e": ' \
                         '10, "1e": 0, "50c": 0, "20c": 0, "10c": 0, "5c": 0, "2c": 0, "1c": 0}, "coins": {"2e": 0, ' \
                         '"1e": 0, "50c": 0, "20c": 0, "10c": 0, "5c": 0, "2c": 0, "1c": 0}, "account": "10.00"}}'
 
@@ -212,16 +224,7 @@ class TestPayment(unittest.TestCase):
 
     def testPayByCash(self):
         automat = Automat(1, 1)
-        automat.cashRegister.coins = {
-            "2e": 10,
-            "1e": 10,
-            "50c": 10,
-            "20c": 10,
-            "10c": 10,
-            "5c": 10,
-            "2c": 10,
-            "1c": 10,
-        }
+        automat.cashRegister.coins = fullRegister.copy()
         self.assertTrue(automat.addRow(0, 0, "KOFOLA", 1.05, 5))
 
         automat.cashRegister.buffer["2e"] = 1
@@ -243,32 +246,14 @@ class TestPayment(unittest.TestCase):
 
     def testPayByCashNotEnough(self):
         automat = Automat(1, 1)
-        automat.cashRegister.coins = {
-            "2e": 10,
-            "1e": 10,
-            "50c": 10,
-            "20c": 10,
-            "10c": 10,
-            "5c": 10,
-            "2c": 10,
-            "1c": 10,
-        }
+        automat.cashRegister.coins = fullRegister.copy()
         self.assertTrue(automat.addRow(0, 0, "KOFOLA", 1.05, 5))
 
         self.assertRaises(NotEnoughMoneyError, automat.buyItemWithCash, 0, 0)
 
     def testPayByCashNotEnough2(self):
         automat = Automat(1, 1)
-        automat.cashRegister.coins = {
-            "2e": 10,
-            "1e": 10,
-            "50c": 10,
-            "20c": 10,
-            "10c": 10,
-            "5c": 10,
-            "2c": 10,
-            "1c": 10,
-        }
+        automat.cashRegister.coins = fullRegister.copy()
         self.assertTrue(automat.addRow(0, 0, "KOFOLA", 5.0, 5))
 
         automat.cashRegister.buffer["2e"] = 1
@@ -291,11 +276,6 @@ class TestPayment(unittest.TestCase):
         self.assertRaises(NotEnoughChangeError, automat.buyItemWithCash, 0, 0)
 
         self.assertEqual(automat.cashRegister.returnCoins(), {"2e": 1})
-
-
-
-
-
 
 
 if __name__ == '__main__':

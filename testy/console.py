@@ -1,9 +1,19 @@
 import unittest
-
 from modules.automat import Automat
 from modules.console import Console, Mode, QueryType, ResetError
 from modules.row import Row
 from decimal import Decimal
+
+fullRegister = {
+    "2e": 10,
+    "1e": 10,
+    "50c": 10,
+    "20c": 10,
+    "10c": 10,
+    "5c": 10,
+    "2c": 10,
+    "1c": 10,
+}
 
 
 class ConsoleTest(unittest.TestCase):
@@ -271,16 +281,7 @@ class TestCardPayment(unittest.TestCase):
 class TestCashPayment(unittest.TestCase):
     def testCashPayment(self):
         automat = Automat(2, 2)
-        automat.cashRegister.coins = {
-            "2e": 10,
-            "1e": 10,
-            "50c": 10,
-            "20c": 10,
-            "10c": 10,
-            "5c": 10,
-            "2c": 10,
-            "1c": 10,
-        }
+        automat.cashRegister.coins = fullRegister.copy()
         console = Console(automat, False)
         console.setMode("1")
         automat.addRow(0, 0, "KEKSIK", 1.25, 1)
@@ -301,8 +302,7 @@ class TestCashPayment(unittest.TestCase):
         # finish paying
         console.executeCommand("10")
 
-        self.assertEqual(startSum+Decimal(1.25), automat.cashRegister.getCoinsSum())
-
+        self.assertEqual(startSum + Decimal(1.25), automat.cashRegister.getCoinsSum())
 
     def testCashPaymentNotEnoughCashBack(self):
         automat = Automat(2, 2)
@@ -334,19 +334,9 @@ class TestCashPayment(unittest.TestCase):
         # console back to default
         self.assertEqual(console.currentQuery.value, 0)
 
-
     def testCashPaymentNotEnoughInserted(self):
         automat = Automat(2, 2)
-        automat.cashRegister.coins = {
-            "2e": 10,
-            "1e": 10,
-            "50c": 10,
-            "20c": 10,
-            "10c": 10,
-            "5c": 10,
-            "2c": 10,
-            "1c": 10,
-        }
+        automat.cashRegister.coins = fullRegister.copy()
         console = Console(automat, False)
         console.setMode("1")
         automat.addRow(0, 0, "KEKSIK", 1.25, 1)
@@ -380,7 +370,6 @@ class TestCashPayment(unittest.TestCase):
         self.assertEqual(automat.cashRegister.getBufferSum(), Decimal(0.00))
         # still, no money was taken
         self.assertEqual(startSum, automat.cashRegister.getCoinsSum())
-
 
 
 if __name__ == '__main__':

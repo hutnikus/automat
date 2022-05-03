@@ -12,6 +12,7 @@ class EmptyError(Exception):
 class NotEnoughMoneyError(Exception):
     pass
 
+
 class NotEnoughChangeError(Exception):
     pass
 
@@ -83,7 +84,7 @@ class Automat:
             os.makedirs(os.path.join(rootDir, "files"))
 
         data = self.getData()
-        with open(os.path.join(rootDir,"files",filename), "w") as file:
+        with open(os.path.join(rootDir, "files", filename), "w") as file:
             json.dump(data, file)
 
     def load(self, filename):
@@ -142,6 +143,7 @@ def getRootDirectory():
 
     dirname = recursiveFindParent(os.path.dirname(__file__))
     return dirname
+
 
 if __name__ == '__main__':
     automat = Automat(2, 3)

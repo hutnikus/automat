@@ -78,11 +78,11 @@ class CashRegister:
             return None
         return round(Decimal(valueDict[coin]), 2)
 
-    def getDictSum(self, dict: dict) -> Decimal:
-        sum = Decimal(0)
-        for coin in dict:
-            sum += dict[coin] * self.getCoinValue(coin)
-        return sum
+    def getDictSum(self, dictionary: dict) -> Decimal:
+        sumOfDict = Decimal(0)
+        for coin in dictionary:
+            sumOfDict += dictionary[coin] * self.getCoinValue(coin)
+        return sumOfDict
 
     def getBufferSum(self) -> Decimal:
         return self.getDictSum(self.buffer)
@@ -138,7 +138,7 @@ class CashRegister:
         # calculate change
         try:
             change = self.getChange(overPayment)
-        except NotEnoughCoinsInRegisterException as e:
+        except NotEnoughCoinsInRegisterException:
             # restore buffer
             self.buffer = bufferCopy
             # restore coins
@@ -157,4 +157,3 @@ class CashRegister:
                 ret[coin] = self.buffer[coin]
                 self.buffer[coin] = 0
         return ret
-

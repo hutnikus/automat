@@ -253,19 +253,7 @@ class Console:
         return True
 
     def choosePositionToAddRow(self, words):
-        if len(words) != 1:
-            return False
-        emptyPositions = self.getPositions("empty")
-        try:
-            int(words[0])
-        except ValueError:
-            self.cancelAction()
-
-        if int(words[0]) in range(len(emptyPositions)):
-            self.stack.append(emptyPositions[int(words[0])])
-            self.currentQuery = QueryType.ADD_ROW_SET_NAME
-            return True
-        return False
+        return self.chooseFromRows(words, QueryType.ADD_ROW_SET_NAME, "empty")
 
     def cancelAction(self, printMsg=True):
         if printMsg:
@@ -278,7 +266,7 @@ class Console:
             print("Automat vracia mince:")
             vratene = self.automat.cashRegister.returnCoins()
             for minca in vratene:
-                print(f"{minca.replace('e','€')} {vratene[minca]}x")
+                print(f"{minca.replace('e', '€')} {vratene[minca]}x")
 
         raise ResetError()
 
@@ -320,22 +308,25 @@ class Console:
         self.currentQuery = QueryType.REMOVE_ROW_CHOOSE_ROW
         return True
 
-    def chooseRowToRemove(self, words):
+    def chooseFromRows(self, words, nextQuery, positionType):
         if len(words) != 1:
             return False
-        fullPositions = self.getPositions("full")
         try:
             int(words[0])
         except ValueError:
-            self.cancelAction()
+            return False
 
-        if int(words[0]) in range(len(fullPositions)):
-            self.stack.append(fullPositions[int(words[0])])
-            self.currentQuery = QueryType.REMOVE_ROW_CONFIRM
+        positions = self.getPositions(positionType)
+        if int(words[0]) in range(len(positions)):
+            self.stack.append(positions[int(words[0])])
+            self.currentQuery = nextQuery
             return True
 
         print("Nesprávne číslo!")
         return True
+
+    def chooseRowToRemove(self, words):
+        return self.chooseFromRows(words, QueryType.REMOVE_ROW_CONFIRM, "full")
 
     def confirmRemoveRow(self, words):
         if len(words) != 1:
@@ -357,21 +348,7 @@ class Console:
         return True
 
     def selectRowToChangePrice(self, words):
-        if len(words) != 1:
-            return False
-        fullPositions = self.getPositions("full")
-        try:
-            int(words[0])
-        except ValueError:
-            self.cancelAction()
-
-        if int(words[0]) in range(len(fullPositions)):
-            self.stack.append(fullPositions[int(words[0])])
-            self.currentQuery = QueryType.CHANGE_ROW_PRICE_NEW_PRICE
-            return True
-
-        print("Nesprávne číslo!")
-        return True
+        return self.chooseFromRows(words, QueryType.CHANGE_ROW_PRICE_NEW_PRICE, "full")
 
     def changePrice(self, words):
         def isCorrectNumber(num):
@@ -401,21 +378,7 @@ class Console:
         return True
 
     def selectRowToChangeQuantity(self, words):
-        if len(words) != 1:
-            return False
-        fullPositions = self.getPositions("full")
-        try:
-            int(words[0])
-        except ValueError:
-            self.cancelAction()
-
-        if int(words[0]) in range(len(fullPositions)):
-            self.stack.append(fullPositions[int(words[0])])
-            self.currentQuery = QueryType.CHANGE_ROW_QUANTITY_NEW_QUANTITY
-            return True
-
-        print("Nesprávne číslo!")
-        return True
+        return self.chooseFromRows(words, QueryType.CHANGE_ROW_QUANTITY_NEW_QUANTITY, "full")
 
     def changeQuantity(self, words):
         def isCorrectNumber(num):
@@ -441,21 +404,7 @@ class Console:
         return False
 
     def selectRowToBuy(self, words):
-        if len(words) != 1:
-            return False
-        fullPositions = self.getPositions("full")
-        try:
-            int(words[0])
-        except ValueError:
-            self.cancelAction()
-
-        if int(words[0]) in range(len(fullPositions)):
-            self.stack.append(fullPositions[int(words[0])])
-            self.currentQuery = QueryType.BUY_ROW_SELECT_PAYMENT
-            return True
-
-        print("Nesprávne číslo!")
-        return True
+        return self.chooseFromRows(words, QueryType.BUY_ROW_SELECT_PAYMENT, "full")
 
     def selectPayment(self, words):
         if len(words) != 1:
@@ -501,7 +450,7 @@ class Console:
 
         volba = int(words[0])
 
-        if volba not in [0,1,2,3,4,5,6,7,10,11]:
+        if volba not in [0, 1, 2, 3, 4, 5, 6, 7, 10, 11]:
             print("Nesprávne číslo!")
             return True
 
