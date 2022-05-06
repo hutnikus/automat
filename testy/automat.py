@@ -1,7 +1,19 @@
+import os
 import unittest
-from modules.automat import Automat, EmptyError
+from modules.automat import Automat, EmptyError, getRootDirectory, NotEnoughChangeError, NotEnoughMoneyError
 from modules.row import Row
 from decimal import Decimal
+
+fullRegister = {
+            "2e": 10,
+            "1e": 10,
+            "50c": 10,
+            "20c": 10,
+            "10c": 10,
+            "5c": 10,
+            "2c": 10,
+            "1c": 10,
+        }
 
 
 class AutomatTest(unittest.TestCase):
@@ -46,10 +58,10 @@ class AutomatTest(unittest.TestCase):
         automat.setRow(1, 0, "FREYER", 999.99, 5)
 
         catalog = automat.getCatalog()
-        controlCatalog = "[0,0] - KAVENKA ($0.01)\n" \
-                         "[0,1] - HORALKA ($5.50)\n" \
-                         "[1,0] - FREYER ($999.99)\n" \
-                         "[1,1] - COKE ($1.50)\n"
+        controlCatalog = "[0,0] - KAVENKA (0.01€) - 5ks\n" \
+                         "[0,1] - HORALKA (5.50€) - 5ks\n" \
+                         "[1,0] - FREYER (999.99€) - 5ks\n" \
+                         "[1,1] - COKE (1.50€) - 5ks\n"
 
         self.assertEqual(catalog, controlCatalog)
 
@@ -92,16 +104,18 @@ class AutomatDataTest(unittest.TestCase):
         automat.cashRegister.buffer["2e"] += 10
         automat.cashRegister.account += 10
 
-        controlString = '{"items": [[null, {"quantity": 5, "price": "1.50", "goods": "COKE"}]], "cashRegister": {"buffer": {"2e": ' \
+        controlString = '{"items": [[null, {"quantity": 5, "price": "1.50", "goods": "COKE"}]], "cashRegister": {' \
+                        '"buffer": {"2e": ' \
                         '10, "1e": 0, "50c": 0, "20c": 0, "10c": 0, "5c": 0, "2c": 0, "1c": 0}, "coins": {"2e": 0, ' \
                         '"1e": 0, "50c": 0, "20c": 0, "10c": 0, "5c": 0, "2c": 0, "1c": 0}, "account": "10.00"}}'
 
-        filename = "../files/data.json"
+        filename = "data.json"
         automat.save(filename)
-        with open(filename, "r") as file:
-            string = file.read()
 
-        self.assertEqual(string, controlString)
+        path = os.path.join(getRootDirectory(), "files", filename)
+
+        with open(path) as file:
+            self.assertEqual(controlString, file.read())
 
     def testLoad(self):
         automat = Automat(1, 2)
@@ -109,7 +123,7 @@ class AutomatDataTest(unittest.TestCase):
         automat.cashRegister.buffer["2e"] += 10
         automat.cashRegister.account += 10
 
-        filename = "../files/data.json"
+        filename = "data.json"
         automat.save(filename)
 
         controlAutomat = Automat(1, 2)
@@ -123,7 +137,7 @@ class AutomatDataTest(unittest.TestCase):
         automat.cashRegister.buffer["2e"] += 10
         automat.cashRegister.account += 10
 
-        filename = "../files/data.json"
+        filename = "data.json"
         automat.save(filename)
 
         controlAutomat = Automat(5, 5)
@@ -207,6 +221,61 @@ class TestPayment(unittest.TestCase):
         self.assertTrue(automat.addRow(0, 0, "KOFOLA", 1.05, 0))
 
         self.assertRaises(EmptyError, automat.buyItemWithCard, 0, 0)
+
+    def testPayByCash(self):
+        automat = Automat(1, 1)
+        automat.cashRegister.coins = fullRegister.copy()
+        self.assertTrue(automat.addRow(0, 0, "KOFOLA", 1.05, 5))
+
+        automat.cashRegister.buffer["2e"] = 1
+
+        change = automat.buyItemWithCash(0, 0)
+
+        self.assertEqual(change, {'50c': 1, '20c': 2, '5c': 1})
+
+    def testPayByCashEmpty(self):
+        automat = Automat(1, 1)
+
+        self.assertRaises(EmptyError, automat.buyItemWithCash, 0, 0)
+
+    def testPayByCashEmpty2(self):
+        automat = Automat(1, 1)
+        self.assertTrue(automat.addRow(0, 0, "KOFOLA", 1.05, 0))
+
+        self.assertRaises(EmptyError, automat.buyItemWithCash, 0, 0)
+
+    def testPayByCashNotEnough(self):
+        automat = Automat(1, 1)
+        automat.cashRegister.coins = fullRegister.copy()
+        self.assertTrue(automat.addRow(0, 0, "KOFOLA", 1.05, 5))
+
+        self.assertRaises(NotEnoughMoneyError, automat.buyItemWithCash, 0, 0)
+
+    def testPayByCashNotEnough2(self):
+        automat = Automat(1, 1)
+        automat.cashRegister.coins = fullRegister.copy()
+        self.assertTrue(automat.addRow(0, 0, "KOFOLA", 5.0, 5))
+
+        automat.cashRegister.buffer["2e"] = 1
+        automat.cashRegister.buffer["1e"] = 1
+        automat.cashRegister.buffer["50c"] = 1
+        automat.cashRegister.buffer["20c"] = 1
+        automat.cashRegister.buffer["10c"] = 1
+        automat.cashRegister.buffer["5c"] = 1
+        automat.cashRegister.buffer["2c"] = 1
+        automat.cashRegister.buffer["1c"] = 1
+
+        with self.assertRaises(NotEnoughMoneyError):
+            automat.buyItemWithCash(0, 0)
+
+    def testPayCashNotEnoughChage(self):
+        automat = Automat(1, 1)
+        automat.addRow(0, 0, "KOFOLA", 1.05, 5)
+        automat.insertCoin("2e")
+
+        self.assertRaises(NotEnoughChangeError, automat.buyItemWithCash, 0, 0)
+
+        self.assertEqual(automat.cashRegister.returnCoins(), {"2e": 1})
 
 
 if __name__ == '__main__':
