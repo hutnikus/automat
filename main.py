@@ -1,5 +1,6 @@
 from modules.console import Console
 from modules.automat import Automat
+from modules.gui import GUI
 
 automat = Automat(2, 2)
 automat.cashRegister.coins = {
@@ -15,4 +16,7 @@ automat.cashRegister.coins = {
 
 automat.addRow(0, 0, "KEKSIK", 1.2, 3)
 
-console = Console(automat)
+# console = Console(automat)
+gui = GUI(automat)
+gui.mainloop()
+
