@@ -85,21 +85,27 @@ class GUI(tkinter.Tk):
         # todo
         ...
 
-    def create_insert_coins_frame(self):
-        bg = "yellow"
-        self.insert_coins_frame = tkinter.Frame(self.management_frame)
-        self.insert_coins_frame.place(x=self.padding,
-                                      y=self.height - self.padding * 3 - self.height * (2 / 5),
-                                      width=self.width / 2 - self.padding * 2,
-                                      height=self.height * (2 / 5),
-                                      anchor="sw")
-        self.insert_coins_frame.configure(background=bg)
+    def create_general_management_frame(self, bg, position, text):
+        if position == "top":
+            y = self.height - self.padding * 3 - self.height * (2 / 5)
+        else:
+            y = self.height - self.padding
 
-        label = tkinter.Label(self.insert_coins_frame,
-                              text="Vhodiť mince",
+        frame = tkinter.Frame(self.management_frame, background=bg)
+        frame.place(x=self.padding,
+                    y=y,
+                    width=self.width / 2 - self.padding * 2,
+                    height=self.height * (2 / 5),
+                    anchor="sw")
+        label = tkinter.Label(frame,
+                              text=text,
                               font=("Helvetica", 15, "bold"),
                               background=bg)
         label.place(x=self.padding, y=self.padding, anchor="nw")
+        return frame
+
+    def create_insert_coins_frame(self):
+        self.insert_coins_frame = self.create_general_management_frame("yellow", "top", "Vhodiť mince")
         self.create_coins_buttons()
 
     def create_coins_buttons(self):
@@ -142,20 +148,7 @@ class GUI(tkinter.Tk):
         ...
 
     def create_cash_return_frame(self):
-        bg = "red"
-        self.cash_return_frame = tkinter.Frame(self.management_frame)
-        self.cash_return_frame.place(x=self.padding,
-                                     y=self.height - self.padding,
-                                     width=self.width / 2 - self.padding * 2,
-                                     height=self.height * (2 / 5),
-                                     anchor="sw")
-        self.cash_return_frame.configure(background=bg)
-
-        label = tkinter.Label(self.cash_return_frame,
-                              text="Výdavok",
-                              font=("Helvetica", 15, "bold"),
-                              background=bg)
-        label.place(x=self.padding, y=self.padding, anchor="nw")
+        self.cash_return_frame = self.create_general_management_frame("red", "bottom", "Výdavok")
         self.create_cash_return_canvas()
 
     def create_cash_return_canvas(self):
@@ -178,20 +171,7 @@ class GUI(tkinter.Tk):
         self.create_cash_register_widgets()
 
     def create_modify_product_frame(self):
-        bg = "yellow"
-        self.modify_product_frame = tkinter.Frame(self.management_frame)
-        self.modify_product_frame.place(x=self.padding,
-                                        y=self.height - self.padding * 3 - self.height * (2 / 5),
-                                        width=self.width / 2 - self.padding * 2,
-                                        height=self.height * (2 / 5),
-                                        anchor="sw")
-        self.modify_product_frame.configure(background=bg)
-
-        label = tkinter.Label(self.modify_product_frame,
-                              text="Zvolený produkt",
-                              font=("Helvetica", 15, "bold"),
-                              background=bg)
-        label.place(x=self.padding, y=self.padding, anchor="nw")
+        self.modify_product_frame = self.create_general_management_frame("yellow", "top", "Zvolený produkt")
 
     def create_modify_product_widgets(self):
         self.name_entry = self.create_entry_with_label(self.padding, 50, "Názov:", self.modify_product_frame)
@@ -247,7 +227,8 @@ class GUI(tkinter.Tk):
                       anchor="nw")
         return spinner
 
-    def create_image_button(self, x, y, width, height, image_path, frame, command):
+    @staticmethod
+    def create_image_button(x, y, width, height, image_path, frame, command):
         img = Image.open(image_path)
         resized = img.resize((width, height), Image.ANTIALIAS)
         image = ImageTk.PhotoImage(resized)
@@ -264,20 +245,7 @@ class GUI(tkinter.Tk):
         ...  # todo
 
     def create_cash_register_frame(self):
-        bg = "red"
-        self.cash_register_frame = tkinter.Frame(self.management_frame)
-        self.cash_register_frame.place(x=self.padding,
-                                       y=self.height - self.padding,
-                                       width=self.width / 2 - self.padding * 2,
-                                       height=self.height * (2 / 5),
-                                       anchor="sw")
-        self.cash_register_frame.configure(background=bg)
-
-        label = tkinter.Label(self.cash_register_frame,
-                              text="Kasa",
-                              font=("Helvetica", 15, "bold"),
-                              background=bg)
-        label.place(x=self.padding, y=self.padding, anchor="nw")
+        self.cash_register_frame = self.create_general_management_frame("red", "bottom", "Kasa")
 
     def create_cash_register_widgets(self):
         self.update()
@@ -325,6 +293,7 @@ class GUI(tkinter.Tk):
     def create_automat_widgets(self):
         self.create_automat_frame()
         self.create_automat_items_frame()
+        self.create_automat_items_widgets()
         self.create_automat_balance()
         self.create_automat_insert_canvas()
         self.create_automat_card_canvas()
@@ -396,3 +365,6 @@ class GUI(tkinter.Tk):
                                         height=100,
                                         anchor="sw")
         self.automat_return_frame.configure(background="brown")
+
+    def create_automat_items_widgets(self):
+        ...  # TODO
