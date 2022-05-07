@@ -15,8 +15,8 @@ automat.cashRegister.coins = {
         }
 
 automat.addRow(0, 0, "KEKSIK", 1.2, 3)
+automat.addRow(1, 1, "KOLA", 1.2, 2)
 
 # console = Console(automat)
 gui = GUI(automat)
 gui.mainloop()
-

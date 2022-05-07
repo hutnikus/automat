@@ -1,5 +1,6 @@
 import tkinter
 from PIL import Image, ImageTk
+from modules.row import Row
 
 coins = {
     "2€": 2,
@@ -13,7 +14,91 @@ coins = {
 }
 
 
+class Item(Row):
+    def __init__(self, x, y, automat, row, frame, image_path="images/empty.png"):
+        if row is None:
+            return
+        super().__init__(row.quantity, row.price, row.goods)
+        self.image_path = image_path
+        frame.update()
+        self.width = frame.winfo_width() / len(automat.items)
+        self.height = frame.winfo_height() / len(automat.items[0])
+        self.create_widget(x, y, frame)
+
+    def create_widget(self, x, y, frame):
+        self.frame = tkinter.Frame(frame, background="green", width=self.width, height=self.height)
+        self.frame.place(x=x * self.width, y=y * self.height)
+
+        self.create_name_label()
+        self.create_image()
+        self.create_price_label()
+
+        self.frame.bind("<Button-1>", lambda event: self.on_click(event))
+
+    def create_name_label(self):
+        self.frame.update()
+        self.name_label = tkinter.Label(self.frame,
+                                        text=self.goods,
+                                        font=("Arial", 12),
+                                        background=self.frame.configure("background")[-1])
+        self.name_label.place(x=self.frame.winfo_width() / 2, y=self.frame.winfo_height() / 2 - 65, anchor="center")
+
+    def create_image(self):
+        self.frame.update()
+        self.image = Image.open(self.image_path)
+        self.image = self.image.resize((100, 100), Image.ANTIALIAS)
+        self.image = ImageTk.PhotoImage(self.image)
+        self.image_label = tkinter.Label(self.frame,
+                                         image=self.image,
+                                         background=self.frame.configure("background")[-1])
+        self.image_label.place(x=self.frame.winfo_width() / 2, y=self.frame.winfo_height() / 2, anchor="center")
+
+    def create_price_label(self):
+        self.frame.update()
+        self.price_label = tkinter.Label(self.frame,
+                                         text=f"{self.price}€",
+                                         font=("Arial", 12),
+                                         background=self.frame.configure("background")[-1])
+        self.price_label.place(x=self.frame.winfo_width() / 2, y=self.frame.winfo_height() / 2 + 65, anchor="center")
+
+    def destroy(self):
+        self.frame.destroy()
+
+    def on_click(self, event):
+        ...  # TODO
+
+
 class GUI(tkinter.Tk):
+    automat_frame = None  # left part of the window, shows automat visually
+    management_frame = None  # right part of the window, contains buttons and widgets
+    insert_coins_frame = None  # (user mode) frame for inserting coins
+    cash_return_frame = None  # (user mode) frame for returning coins
+    modify_product_frame = None  # (admin mode) frame for modifying products
+    cash_register_frame = None  # (admin mode) frame for modifying cash register
+    automat_items_frame = None  # frame for displaying products
+    automat_balance_frame = None  # frame for displaying worth of inserted coins
+    automat_return_frame = None  # frame for displaying bought items
+
+    mode_button = None  # button for changing mode
+    card_button = None  # (user mode) button for paying with card
+    storno_button = None  # (user mode) button for cancelling payment with cash
+    coins_buttons = None  # (user mode) dict of buttons for inserting coins ("2€" - <Button>)
+    product_image_button = None  # (admin mode) button for changing product image
+    submit_changes_button = None  # (admin mode) button for submitting changes in product
+
+    cash_return_canvas = None  # (user mode) canvas for showing returned coins
+    automat_insert_canvas = None  # decorative canvas for place to pay with cash
+    automat_card_canvas = None  # decorative canvas for place to pay with card
+
+    name_entry = None  # (admin mode) entry for changing product name
+    price_entry = None  # (admin mode) entry for changing product price
+
+    quantity_spinner = None  # (admin mode) spinner for changing product quantity
+    cash_spinners = None  # (admin mode) dict of spinners for changing product quantity ("2€" - <Spinbox>)
+
+    actual_cash_label = None  # (admin mode) label for showing actual balance in automat
+    inserted_balance_label = None  # label for showing worth of inserted coins
+
     def __init__(self, automat):
         super().__init__()
         self.automat = automat
@@ -367,4 +452,6 @@ class GUI(tkinter.Tk):
         self.automat_return_frame.configure(background="brown")
 
     def create_automat_items_widgets(self):
+        self.items = [[Item(i, j, self.automat, item, self.automat_items_frame) for j, item in enumerate(row)] for
+                      i, row in enumerate(self.automat.items)]
         ...  # TODO
