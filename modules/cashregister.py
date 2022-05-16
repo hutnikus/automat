@@ -123,7 +123,7 @@ class CashRegister:
         for coin in change:
             self.coins[coin] -= change[coin]
 
-    def payCashGetChange(self, amount: Decimal) -> (dict, bool):
+    def payCashGetChange(self, amount: Decimal) -> Union(dict, bool):
         # check if enough coins in buffer
         if not self.enoughCoinsInBuffer(amount):
             raise ValueError("Not enough coins in buffer")

@@ -1,3 +1,5 @@
+import sys
+sys.path.append("../automat")
 from testy.automat import *
 from testy.cashregister import *
 from testy.row import *

@@ -1,5 +1,7 @@
 import tkinter
+from typing import Dict
 from PIL import Image, ImageTk
+from modules.automat import Automat
 from modules.row import Row
 
 coins = {
@@ -99,7 +101,7 @@ class GUI(tkinter.Tk):
     actual_cash_label = None  # (admin mode) label for showing actual balance in automat
     inserted_balance_label = None  # label for showing worth of inserted coins
 
-    def __init__(self, automat):
+    def __init__(self, automat:Automat):
         super().__init__()
         self.automat = automat
         self.title("Automat")
@@ -213,8 +215,8 @@ class GUI(tkinter.Tk):
                                        anchor="nw")
 
     def coin_button_clicked(self, coin):
-        # todo
-        ...
+        self.automat.insertCoin(coin.replace("€", "e"))
+        self.setBalance(self.automat.cashRegister.getBufferSum())
 
     def create_storno_button(self):
         self.update()
@@ -229,8 +231,10 @@ class GUI(tkinter.Tk):
                                  anchor="center")
 
     def storno_button_clicked(self):
-        # todo
-        ...
+        returnedCoins = self.automat.cashRegister.returnCoins()
+        self.draw_cash_return(returnedCoins)
+        self.setBalance(0)
+        print(returnedCoins)
 
     def create_cash_return_frame(self):
         self.cash_return_frame = self.create_general_management_frame("red", "bottom", "Výdavok")
@@ -243,6 +247,38 @@ class GUI(tkinter.Tk):
                                                  height=self.cash_return_frame.winfo_height(),
                                                  background="pink")
         self.cash_return_canvas.place(x=0, y=self.padding * 5, anchor="nw")
+
+    def draw_cash_return(self, coins:dict):
+        self.cash_return_canvas.update()
+        self.cash_return_canvas.delete('all')
+        padding = 5
+        diameter = 70
+        x = 0
+        y = padding
+        numberOfCoins = sum(coins.values())
+        while True :
+            width = int(self.cash_return_canvas.winfo_width() / (diameter + 2 * padding))
+            height = int(self.cash_return_canvas.winfo_height() / (diameter + padding)) - 1
+            print(width * height)
+            if numberOfCoins > width * height :
+                diameter -= 5
+            else:
+                break
+
+
+        for coin in coins : 
+            for i in range(coins[coin]):
+                x += padding
+                self.draw_coin(coin.replace("e", "€"), x , y, diameter)
+                x += diameter
+                if x+diameter >= self.cash_return_canvas.winfo_width() :
+                    y += padding + diameter
+                    x = 0
+
+    def draw_coin(self, coin, x, y, diameter):
+        self.cash_return_canvas.create_oval(x, y, x + diameter, y + diameter, fill= 'yellow')
+        self.cash_return_canvas.create_text(x + diameter/2, y + diameter/2, text=coin, anchor='center', font=("Helvetica", 12))
+
 
     def destroy_customer_widgets(self):
         self.card_button.destroy()

@@ -1,3 +1,6 @@
+import sys
+sys.path.append("../automat")
+
 from modules.console import Console
 from modules.automat import Automat
 from modules.gui import GUI
