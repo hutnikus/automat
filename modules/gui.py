@@ -21,20 +21,26 @@ class Item(Row):
     def __init__(self, x, y, automat, row, frame, gui, image_path="images/empty.png"):
         if row is not None:
             super().__init__(row.quantity, row.price, row.goods)
-            self.image_path = image_path
+        self.image_path = image_path
         frame.update()
         self.width = frame.winfo_width() / len(automat.items)
         self.height = frame.winfo_height() / len(automat.items[0])
         self.parent_frame = frame
         self.gui = gui
 
-        if row is None:
-            self.create_frame(x, y, frame, "grey")
-            return
+        self.x, self.y = x, y
+        self.automat = automat
+
+        self.empty = row is None
+        
         self.create_widget(x, y, frame)
 
     def create_widget(self, x, y, frame):
-        self.create_frame(x, y, frame,"green")
+        if self.empty:
+            color = "grey"
+        else:
+            color = "green"
+        self.create_frame(x, y, frame,color)
         self.create_name_label()
         self.create_image()
         self.create_price_label()
@@ -46,9 +52,12 @@ class Item(Row):
         self.frame.bind("<Button-1>", lambda event: self.on_click(event))
 
     def create_name_label(self):
+        text = ""
+        if not self.empty:
+            text = self.goods
         self.frame.update()
         self.name_label = tkinter.Label(self.frame,
-                                        text=self.goods,
+                                        text=text,
                                         font=("Arial", 12),
                                         background=self.frame.configure("background")[-1])
         self.name_label.place(x=self.frame.winfo_width() / 2, y=self.frame.winfo_height() / 2 - 65, anchor="center")
@@ -60,16 +69,20 @@ class Item(Row):
         self.image = self.image.resize((100, 100), Image.ANTIALIAS)
         self.image = ImageTk.PhotoImage(self.image)
         self.image_label = tkinter.Label(self.frame,
-                                         image=self.image,
                                          background=self.frame.configure("background")[-1])
         self.image_label.place(x=self.frame.winfo_width() / 2, y=self.frame.winfo_height() / 2, anchor="center")
+        if not self.empty:
+            self.image_label.config(image=self.image)
         self.image_label.bind("<Button-1>", lambda event: self.on_click(event))
         
 
     def create_price_label(self):
+        price = ""
+        if not self.empty:
+            price = f"{self.price}€"
         self.frame.update()
         self.price_label = tkinter.Label(self.frame,
-                                         text=f"{self.price}€",
+                                         text=price,
                                          font=("Arial", 12),
                                          background=self.frame.configure("background")[-1])
         self.price_label.place(x=self.frame.winfo_width() / 2, y=self.frame.winfo_height() / 2 + 65, anchor="center")
@@ -78,6 +91,10 @@ class Item(Row):
 
     def destroy(self):
         self.frame.destroy()
+
+    def update(self,row):
+        self.destroy()
+        self.__init__(self.x, self.y, self.automat, row, self.parent_frame,self.image_path)
 
     def on_click(self, event):
         self.frame.update()
@@ -339,6 +356,12 @@ class GUI(tkinter.Tk):
                                          anchor="center")
 
     def submit_changes_button_clicked(self):
+        item = self.automat_items_frame.selected_item
+        if item is not None:
+            item.image_path = self.product_image_button.image_path.name
+            if not item.empty:
+                item.update(item)
+
         ...  # todo
 
     def create_entry_with_label(self, x, y, label_text, frame):
@@ -386,6 +409,7 @@ class GUI(tkinter.Tk):
                                 height=image.height())
         button.image = image
         button.place(x=x, y=y, anchor="nw")
+        button.image_path = image_path
         return button
 
     def product_image_button_clicked(self):
@@ -398,6 +422,7 @@ class GUI(tkinter.Tk):
         self.product_image_button = self.create_image_button(350, 100, 100, 100, file_path.name, 
                                                                 self.modify_product_frame,
                                                                 self.product_image_button_clicked)
+        self.product_image_button.image_path = file_path
                                                                 
         # set image on card
         ...  # todo
