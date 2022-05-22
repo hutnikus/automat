@@ -18,7 +18,7 @@ coins = {
 
 
 class Item(Row):
-    def __init__(self, x, y, automat, row, frame, image_path="images/empty.png"):
+    def __init__(self, x, y, automat, row, frame, gui, image_path="images/empty.png"):
         if row is not None:
             super().__init__(row.quantity, row.price, row.goods)
             self.image_path = image_path
@@ -26,6 +26,7 @@ class Item(Row):
         self.width = frame.winfo_width() / len(automat.items)
         self.height = frame.winfo_height() / len(automat.items[0])
         self.parent_frame = frame
+        self.gui = gui
 
         if row is None:
             self.create_frame(x, y, frame, "grey")
@@ -85,6 +86,13 @@ class Item(Row):
             self.parent_frame.selected_item.frame.update()
         self.frame.config(highlightbackground = "blue", highlightthickness = 5)
         self.parent_frame.selected_item = self
+        if self.gui.mode == "Admin" :
+            self.gui.name_entry.delete(0, tkinter.END)
+            self.gui.price_entry.delete(0, tkinter.END)
+            self.gui.quantity_spinner.delete(0, tkinter.END)
+            self.gui.name_entry.insert(0, self.goods)
+            self.gui.price_entry.insert(0, self.price)
+            self.gui.quantity_spinner.insert(0, self.quantity)
         ...  # TODO
 
 
@@ -518,7 +526,6 @@ class GUI(tkinter.Tk):
         self.automat_return_frame.configure(background="brown")
 
     def create_automat_items_widgets(self):
-        self.items = [[Item(i, j, self.automat, item, self.automat_items_frame) for j, item in enumerate(row)] for
+        self.items = [[Item(i, j, self.automat, item, self.automat_items_frame, self) for j, item in enumerate(row)] for
                       i, row in enumerate(self.automat.items)]
-        print(self.items)
         ...  # TODO
