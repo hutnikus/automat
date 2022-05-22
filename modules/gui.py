@@ -74,11 +74,11 @@ class Item(Row):
         self.frame.destroy()
 
     def on_click(self, event):
-        self.frame.config(highlightbackground = "blue", highlightthickness = 5)
         self.frame.update()
         if self.parent_frame.selected_item is not None :
             self.parent_frame.selected_item.frame.config(highlightthickness = 0)
             self.parent_frame.selected_item.frame.update()
+        self.frame.config(highlightbackground = "blue", highlightthickness = 5)
         self.parent_frame.selected_item = self
         ...  # TODO
 
