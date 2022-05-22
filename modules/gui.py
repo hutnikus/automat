@@ -3,6 +3,7 @@ from typing import Dict
 from PIL import Image, ImageTk
 from modules.automat import Automat
 from modules.row import Row
+from tkinter.filedialog import askopenfile
 
 coins = {
     "2€": 2,
@@ -375,6 +376,17 @@ class GUI(tkinter.Tk):
         return button
 
     def product_image_button_clicked(self):
+        file_path = askopenfile(mode='r', filetypes=[('Image Files', '*jpeg'), ('Image Files', '*jpg'), ('Image Files', '*png')])
+        print(file_path)
+        if file_path is None:
+            return
+        # set image on button
+        self.product_image_button.destroy()
+        self.product_image_button = self.create_image_button(350, 100, 100, 100, file_path.name, 
+                                                                self.modify_product_frame,
+                                                                self.product_image_button_clicked)
+                                                                
+        # set image on card
         ...  # todo
 
     def create_cash_register_frame(self):
