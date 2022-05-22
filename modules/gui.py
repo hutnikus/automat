@@ -73,6 +73,7 @@ class Item(Row):
         self.image_label.place(x=self.frame.winfo_width() / 2, y=self.frame.winfo_height() / 2, anchor="center")
         if not self.empty:
             self.image_label.config(image=self.image)
+            self.image_label.image = self.image
         self.image_label.bind("<Button-1>", lambda event: self.on_click(event))
         
 
@@ -94,7 +95,8 @@ class Item(Row):
 
     def update(self,row):
         self.destroy()
-        self.__init__(self.x, self.y, self.automat, row, self.parent_frame,self.image_path)
+        print(self.image_path)
+        self.__init__(self.x, self.y, self.automat, row, self.parent_frame,self.gui,self.image_path)
 
     def on_click(self, event):
         self.frame.update()
@@ -103,6 +105,7 @@ class Item(Row):
             self.parent_frame.selected_item.frame.update()
         self.frame.config(highlightbackground = "blue", highlightthickness = 5)
         self.parent_frame.selected_item = self
+
         if self.gui.mode == "Admin" :
             self.gui.name_entry.delete(0, tkinter.END)
             self.gui.price_entry.delete(0, tkinter.END)
@@ -358,7 +361,7 @@ class GUI(tkinter.Tk):
     def submit_changes_button_clicked(self):
         item = self.automat_items_frame.selected_item
         if item is not None:
-            item.image_path = self.product_image_button.image_path.name
+            item.image_path = self.product_image_button.image_path
             if not item.empty:
                 item.update(item)
 
@@ -422,7 +425,7 @@ class GUI(tkinter.Tk):
         self.product_image_button = self.create_image_button(350, 100, 100, 100, file_path.name, 
                                                                 self.modify_product_frame,
                                                                 self.product_image_button_clicked)
-        self.product_image_button.image_path = file_path
+        self.product_image_button.image_path = file_path.name
                                                                 
         # set image on card
         ...  # todo
