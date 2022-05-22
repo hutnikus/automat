@@ -23,3 +23,5 @@ automat.addRow(1, 1, "KOLA", 1.2, 2)
 # console = Console(automat)
 gui = GUI(automat)
 gui.mainloop()
+
+#test
