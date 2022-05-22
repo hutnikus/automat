@@ -93,7 +93,7 @@ class Item(Row):
 
     def update(self,row):
         self.destroy()
-        self.__init__(self.x, self.y, self.automat, row, self.parent_frame)
+        self.__init__(self.x, self.y, self.automat, row, self.parent_frame,self.image_path)
 
     def on_click(self, event):
         self.frame.update()
@@ -350,6 +350,7 @@ class GUI(tkinter.Tk):
     def submit_changes_button_clicked(self):
         item = self.automat_items_frame.selected_item
         if item is not None:
+            item.image_path = self.product_image_button.image_path.name
             if not item.empty:
                 item.update(item)
 
@@ -400,6 +401,7 @@ class GUI(tkinter.Tk):
                                 height=image.height())
         button.image = image
         button.place(x=x, y=y, anchor="nw")
+        button.image_path = image_path
         return button
 
     def product_image_button_clicked(self):
@@ -412,6 +414,7 @@ class GUI(tkinter.Tk):
         self.product_image_button = self.create_image_button(350, 100, 100, 100, file_path.name, 
                                                                 self.modify_product_frame,
                                                                 self.product_image_button_clicked)
+        self.product_image_button.image_path = file_path
                                                                 
         # set image on card
         ...  # todo
