@@ -19,24 +19,29 @@ coins = {
 
 class Item(Row):
     def __init__(self, x, y, automat, row, frame, image_path="images/empty.png"):
-        if row is None:
-            return
-        super().__init__(row.quantity, row.price, row.goods)
-        self.image_path = image_path
+        if row is not None:
+            super().__init__(row.quantity, row.price, row.goods)
+            self.image_path = image_path
         frame.update()
         self.width = frame.winfo_width() / len(automat.items)
         self.height = frame.winfo_height() / len(automat.items[0])
         self.parent_frame = frame
+
+        if row is None:
+            self.create_frame(x, y, frame, "grey")
+            return
         self.create_widget(x, y, frame)
 
     def create_widget(self, x, y, frame):
-        self.frame = tkinter.Frame(frame, background="green", width=self.width, height=self.height)
-        self.frame.place(x=x * self.width, y=y * self.height)
-
+        self.create_frame(x, y, frame,"green")
         self.create_name_label()
         self.create_image()
         self.create_price_label()
+        
 
+    def create_frame(self,x,y,frame,color):
+        self.frame = tkinter.Frame(frame, background=color, width=self.width, height=self.height)
+        self.frame.place(x=x * self.width, y=y * self.height)
         self.frame.bind("<Button-1>", lambda event: self.on_click(event))
 
     def create_name_label(self):
