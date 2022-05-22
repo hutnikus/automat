@@ -25,6 +25,7 @@ class Item(Row):
         frame.update()
         self.width = frame.winfo_width() / len(automat.items)
         self.height = frame.winfo_height() / len(automat.items[0])
+        self.parent_frame = frame
         self.create_widget(x, y, frame)
 
     def create_widget(self, x, y, frame):
@@ -44,6 +45,7 @@ class Item(Row):
                                         font=("Arial", 12),
                                         background=self.frame.configure("background")[-1])
         self.name_label.place(x=self.frame.winfo_width() / 2, y=self.frame.winfo_height() / 2 - 65, anchor="center")
+        self.name_label.bind("<Button-1>", lambda event: self.on_click(event))
 
     def create_image(self):
         self.frame.update()
@@ -54,6 +56,8 @@ class Item(Row):
                                          image=self.image,
                                          background=self.frame.configure("background")[-1])
         self.image_label.place(x=self.frame.winfo_width() / 2, y=self.frame.winfo_height() / 2, anchor="center")
+        self.image_label.bind("<Button-1>", lambda event: self.on_click(event))
+        
 
     def create_price_label(self):
         self.frame.update()
@@ -62,11 +66,19 @@ class Item(Row):
                                          font=("Arial", 12),
                                          background=self.frame.configure("background")[-1])
         self.price_label.place(x=self.frame.winfo_width() / 2, y=self.frame.winfo_height() / 2 + 65, anchor="center")
+        self.price_label.bind("<Button-1>", lambda event: self.on_click(event))
+        
 
     def destroy(self):
         self.frame.destroy()
 
     def on_click(self, event):
+        self.frame.config(highlightbackground = "blue", highlightthickness = 5)
+        self.frame.update()
+        if self.parent_frame.selected_item is not None :
+            self.parent_frame.selected_item.frame.config(highlightthickness = 0)
+            self.parent_frame.selected_item.frame.update()
+        self.parent_frame.selected_item = self
         ...  # TODO
 
 
@@ -428,6 +440,7 @@ class GUI(tkinter.Tk):
                                        height=self.height - 120,
                                        anchor="nw")
         self.automat_items_frame.configure(background="#aaaaaa")
+        self.automat_items_frame.selected_item = None
 
     def create_automat_balance(self):
         bg = "grey"
@@ -490,4 +503,5 @@ class GUI(tkinter.Tk):
     def create_automat_items_widgets(self):
         self.items = [[Item(i, j, self.automat, item, self.automat_items_frame) for j, item in enumerate(row)] for
                       i, row in enumerate(self.automat.items)]
+        print(self.items)
         ...  # TODO
